@@ -52,7 +52,7 @@ git --version
 ## Step 5 — Download the kit
 
 ```bash
-git clone https://github.com/<you>/agentic-os-kit.git ~/agentic-os
+git clone https://github.com/Robingbf/agentic-os-kit.git ~/agentic-os
 cd ~/agentic-os
 bash setup.sh
 ```

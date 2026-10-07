@@ -23,7 +23,7 @@ creator gets a Content page, a freelancer a Clients page, a student an Exams pag
 Short version, if you are used to the terminal:
 
 ```bash
-git clone https://github.com/<you>/agentic-os-kit.git ~/agentic-os
+git clone https://github.com/Robingbf/agentic-os-kit.git ~/agentic-os
 cd ~/agentic-os
 bash setup.sh        # checks Python, Claude Code, creates the private folders
 claude               # then just say: "hi, let's set up my OS"

@@ -35,7 +35,7 @@ Sur Mac, s'il en manque un : `xcode-select --install`, clique sur *Installer*, p
 
 ## Étape 5 : télécharger le kit
 ```bash
-git clone https://github.com/<toi>/agentic-os-kit.git ~/agentic-os
+git clone https://github.com/Robingbf/agentic-os-kit.git ~/agentic-os
 cd ~/agentic-os
 bash setup.sh
 ```

@@ -21,7 +21,7 @@ qui te servent. Un vidéaste aura une page Contenu, un freelance une page Client
 En bref :
 
 ```bash
-git clone https://github.com/<toi>/agentic-os-kit.git ~/agentic-os
+git clone https://github.com/Robingbf/agentic-os-kit.git ~/agentic-os
 cd ~/agentic-os
 bash setup.sh
 claude          # puis dis : « salut, on configure mon OS »
