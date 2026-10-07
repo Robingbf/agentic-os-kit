@@ -1,5 +1,7 @@
 # Agentic OS Kit
 
+<p align="center"><img src="docs/assets/dashboard.webp" alt="Agentic OS dashboard: Today, inbox, the brain graph in rings, skills deck and routines" width="100%"></p>
+
 **Your own AI operating system, on your computer, built around how *you* work.**
 
 Agentic OS Kit turns [Claude Code](https://claude.com/claude-code) into a personal command centre:
@@ -14,7 +16,6 @@ guided setup (10 short "cards") interviews you — what you do, your week, your 
 and then builds *your* OS: only the panels, pages, routines and skills that are useful to you. A video
 creator gets a Content page, a freelancer a Clients page, a student an Exams page.
 
-<p align="center"><i>Brain · Projects · your pages — Today on the left — Capture, Skills deck and Routines on the right.</i></p>
 
 ## Install (15 minutes, then the guided setup)
 

@@ -1,5 +1,7 @@
 # Agentic OS Kit 🇫🇷
 
+<p align="center"><img src="docs/assets/dashboard.webp" alt="Le dashboard Agentic OS : Today, inbox, le cerveau en anneaux, skills deck et routines" width="100%"></p>
+
 **Ton propre système d'exploitation IA, sur ton ordinateur, construit autour de ta façon de travailler.**
 
 Agentic OS Kit transforme [Claude Code](https://claude.com/claude-code) en centre de commande personnel :
