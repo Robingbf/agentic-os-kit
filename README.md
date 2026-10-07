@@ -19,7 +19,7 @@ creator gets a Content page, a freelancer a Clients page, a student an Exams pag
 
 ## Install (15 minutes, then the guided setup)
 
-👉 **Step-by-step guide for non-developers: [INSTALL.md](INSTALL.md)** · 🇫🇷 [Version française](README.fr.md)
+👉 **Step-by-step guide for non-developers: [INSTALL.md](INSTALL.md)** — with the terminal, or with no terminal at all from the Claude desktop app (Option B) · 🇫🇷 [Version française](README.fr.md)
 
 Short version, if you are used to the terminal:
 

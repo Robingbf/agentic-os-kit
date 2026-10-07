@@ -18,7 +18,7 @@ qui te servent. Un vidéaste aura une page Contenu, un freelance une page Client
 
 ## Installation
 
-👉 **Guide pas à pas, sans expérience requise : [INSTALL.fr.md](INSTALL.fr.md)**
+👉 **Guide pas à pas, sans expérience requise : [INSTALL.fr.md](INSTALL.fr.md)**, avec le Terminal, ou sans terminal depuis l'application Claude (option B)
 
 En bref :
 

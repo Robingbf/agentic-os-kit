@@ -54,6 +54,26 @@ La première fois, Claude Code te demande de te connecter avec ton compte Claude
 ## Étape 7 (conseillée) : connecter tes applis
 Sur [claude.ai](https://claude.ai) → **Paramètres → Connecteurs**, connecte ce que tu utilises (Gmail, Google Agenda, Google Drive, Notion, Slack…). Ils sont ensuite disponibles dans Claude Code avec le même compte. La carte 02 te dit lesquels valent le coup pour toi. L'OS ne les utilise qu'**en lecture**, sauf si tu demandes explicitement une action.
 
+## Option B : sans terminal, avec l'application Claude (onglet Code)
+
+Si tu utilises Claude Code dans l'**application Claude** (ou l'extension VS Code / JetBrains), tu peux
+sauter les étapes 2 à 6 : Claude s'occupe de la partie technique.
+
+1. Installe l'[application Claude](https://claude.ai/download), connecte-toi et ouvre l'onglet **Code**.
+2. Démarre une session dans ton **dossier personnel** (choisis-le comme dossier de travail à l'ouverture de la session).
+3. Colle ce message :
+   > Clone https://github.com/Robingbf/agentic-os-kit dans ~/agentic-os, lance `bash setup.sh` dedans,
+   > et dis-moi s'il manque quelque chose sur mon ordinateur.
+   Claude te demande l'autorisation avant chaque commande : lis-la, puis accepte.
+4. Ouvre une **nouvelle session** dont le dossier de travail est `~/agentic-os`. C'est important : le
+   `CLAUDE.md` du kit n'est chargé que si la session tourne dans ce dossier.
+5. Dis : **salut, on configure mon OS**. La configuration guidée démarre (carte 00).
+
+Pour le dashboard, demande à Claude : « lance mon dashboard ». Selon ton application, il s'ouvre dans un
+panneau d'aperçu, ou Claude te donne l'adresse http://127.0.0.1:8765 à ouvrir dans ton navigateur.
+
+---
+
 ## Au quotidien
 ```bash
 cd ~/agentic-os && python3 dashboard/server.py

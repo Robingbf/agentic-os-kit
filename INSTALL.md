@@ -87,6 +87,26 @@ unless you explicitly ask for an action.
 
 ---
 
+## Option B — No terminal: the Claude desktop app (Code tab)
+
+If you use Claude Code inside the **Claude desktop app** (or the VS Code / JetBrains extension), you can
+skip steps 2 to 6: Claude does the technical part for you.
+
+1. Install the [Claude desktop app](https://claude.ai/download), log in, open the **Code** tab.
+2. Start a session in your **home folder** (choose it as the working folder when you open the session).
+3. Paste this message:
+   > Clone https://github.com/Robingbf/agentic-os-kit into ~/agentic-os, run `bash setup.sh` inside it,
+   > and tell me if anything is missing on my computer.
+   Claude asks your permission before running each command: read it, then accept.
+4. Open a **new session** whose working folder is `~/agentic-os` (this matters: the kit's `CLAUDE.md`
+   only loads when the session runs in that folder).
+5. Say: **hi, let's set up my OS**. The guided setup starts (Card 00).
+
+For the dashboard, ask Claude: "start my dashboard". Depending on your app, it opens in a preview pane
+or gives you the address http://127.0.0.1:8765 to open in your browser.
+
+---
+
 ## Every day after setup
 
 ```bash
