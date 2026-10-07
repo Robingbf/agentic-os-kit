@@ -1,0 +1,25 @@
+# Personal data: produced by the setup and the routines, never versioned
+os.config.json
+goals.json
+memory-map/areas/*
+!memory-map/areas/_example.md
+memory-map/archive.md
+interviews/
+state/
+dashboard/data/
+routines/queue/
+routines/.lock
+routines/prompts/custom/
+setup/progress.json
+.claude/settings.local.json
+.claude/skills/
+
+# Logs
+*.log
+
+# Generated files
+__pycache__/
+*.pyc
+*.tmp
+tools/macsensors
+.DS_Store

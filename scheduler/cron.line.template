@@ -1,0 +1,1 @@
+*/5 * * * * cd "__ROOT__" && PATH="__PATH__" "__PYTHON__" routines/run.py >> routines/scheduler.log 2>&1  # agentic-os-routines

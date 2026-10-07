@@ -1,0 +1,246 @@
+{
+  "caps": {
+    "daily_runs": 30,
+    "window_minutes": 60,
+    "window_runs": 8
+  },
+  "routines": [
+    {
+      "name": "morning-digest",
+      "label": "Morning digest",
+      "description": "Reads mail and calendar (read-only) and writes the morning summary shown at the top of the dashboard.",
+      "enabled": false,
+      "deck": true,
+      "schedule": "30 7 * * *",
+      "catch_up_hours": 8,
+      "machine": "*",
+      "prompt_file": "prompts/morning-digest.md",
+      "model": "sonnet",
+      "effort": "medium",
+      "max_turns": 30,
+      "timeout_seconds": 600,
+      "allowed_tools": [
+        "Read",
+        "Glob",
+        "Grep",
+        "mcp__claude_ai_Gmail__list_labels",
+        "mcp__claude_ai_Gmail__search_threads",
+        "mcp__claude_ai_Gmail__get_thread",
+        "mcp__claude_ai_Gmail__get_message",
+        "mcp__claude_ai_Google_Calendar__list_calendars",
+        "mcp__claude_ai_Google_Calendar__list_events",
+        "mcp__claude_ai_Google_Calendar__search_events",
+        "mcp__claude_ai_Google_Calendar__get_event"
+      ],
+      "output": "dashboard/data/digest.json"
+    },
+    {
+      "name": "memory-map-check",
+      "label": "Check the memory map",
+      "description": "Verifies that every link in the memory map points to something that exists.",
+      "deck": true,
+      "schedule": "0 3 * * *",
+      "catch_up_hours": 20,
+      "machine": "*",
+      "command": [
+        "python3",
+        "{ROOT}/memory-map/check.py"
+      ],
+      "model": "-",
+      "timeout_seconds": 60,
+      "capture_stdout": true,
+      "output": "dashboard/data/memory-map.json"
+    },
+    {
+      "name": "brain-build",
+      "label": "Rebuild the brain",
+      "description": "Rebuilds the brain graph (skills, memory, routines, apps) shown on the first page.",
+      "schedule": "5 3 * * *",
+      "catch_up_hours": 20,
+      "machine": "*",
+      "command": [
+        "python3",
+        "{ROOT}/routines/build_brain.py"
+      ],
+      "model": "-",
+      "timeout_seconds": 60,
+      "output": "dashboard/data/brain.json"
+    },
+    {
+      "name": "git-snapshot",
+      "label": "Git snapshot",
+      "description": "Commits the OS folder if anything changed (secret scan first); pushes only if a remote named origin exists.",
+      "schedule": "10 3 * * *",
+      "catch_up_hours": 20,
+      "machine": "*",
+      "command": [
+        "python3",
+        "{ROOT}/tools/snapshot.py"
+      ],
+      "model": "-",
+      "timeout_seconds": 120,
+      "capture_stdout": true,
+      "output": "state/snapshot.json"
+    },
+    {
+      "name": "usage-refresh",
+      "label": "Refresh Claude quota",
+      "description": "Reads the remaining Claude subscription quota with a minimal probe.",
+      "schedule": null,
+      "internal": true,
+      "machine": "*",
+      "command": [
+        "python3",
+        "{ROOT}/routines/usage_probe.py",
+        "--force"
+      ],
+      "model": "-",
+      "timeout_seconds": 90,
+      "output": "state/usage.json"
+    },
+    {
+      "name": "inbox-triage",
+      "label": "Sort my notes",
+      "description": "Proposes where each note captured in the dashboard should go. Changes nothing until you pick an option.",
+      "schedule": null,
+      "internal": true,
+      "machine": "*",
+      "prompt_file": "prompts/inbox-triage.md",
+      "model": "sonnet",
+      "effort": "low",
+      "max_turns": 12,
+      "timeout_seconds": 300,
+      "allowed_tools": [
+        "Read",
+        "Glob",
+        "Grep"
+      ],
+      "inject": "inbox",
+      "post": "inbox",
+      "output": "state/inbox-last.json"
+    },
+    {
+      "name": "inbox-apply",
+      "label": "Apply a filing choice",
+      "description": "Writes a captured note where you chose (journal, ideas or a memory-map file). Deterministic, no AI.",
+      "schedule": null,
+      "internal": true,
+      "machine": "*",
+      "command": [
+        "python3",
+        "{ROOT}/routines/inbox_apply.py"
+      ],
+      "model": "-",
+      "timeout_seconds": 30,
+      "params": {
+        "id": "\\d{8}T\\d{6}-[0-9a-f]{6}",
+        "choice": "[0-9]"
+      },
+      "output": "state/inbox/<id>.json"
+    },
+    {
+      "name": "mail-check",
+      "label": "Check my mail",
+      "description": "Lists new mail and analyses what is new (read-only). Only when mail is enabled.",
+      "schedule": null,
+      "internal": true,
+      "requires": "mail",
+      "machine": "*",
+      "command": [
+        "python3",
+        "{ROOT}/routines/mail_watch.py",
+        "--force"
+      ],
+      "model": "-",
+      "timeout_seconds": 420,
+      "output": "dashboard/data/inbox-live.json"
+    },
+    {
+      "name": "gmail-apply",
+      "label": "Gmail action",
+      "description": "Files or archives ONE thread after a click in the dashboard. Never sends, deletes or creates labels.",
+      "schedule": null,
+      "internal": true,
+      "requires": "mail",
+      "machine": "*",
+      "prompt_file": "prompts/gmail-apply.md",
+      "model": "haiku",
+      "effort": "low",
+      "max_turns": 8,
+      "timeout_seconds": 120,
+      "allowed_tools": [
+        "mcp__claude_ai_Gmail__list_labels",
+        "mcp__claude_ai_Gmail__label_thread",
+        "mcp__claude_ai_Gmail__unlabel_thread"
+      ],
+      "params": {
+        "thread": "[0-9a-f]{8,32}",
+        "action": "label|archive|file",
+        "label": "[\\w '/.&()-]{0,80}"
+      },
+      "output": "state/gmail-last.json"
+    }
+  ],
+  "always_denied_tools": [
+    "Bash",
+    "Write",
+    "Edit",
+    "NotebookEdit",
+    "WebFetch",
+    "mcp__claude_ai_Gmail__send_message",
+    "mcp__claude_ai_Gmail__reply",
+    "mcp__claude_ai_Gmail__forward",
+    "mcp__claude_ai_Gmail__create_draft",
+    "mcp__claude_ai_Gmail__update_draft",
+    "mcp__claude_ai_Gmail__delete_draft",
+    "mcp__claude_ai_Gmail__trash_message",
+    "mcp__claude_ai_Gmail__trash_thread",
+    "mcp__claude_ai_Gmail__untrash_message",
+    "mcp__claude_ai_Gmail__untrash_thread",
+    "mcp__claude_ai_Gmail__create_label",
+    "mcp__claude_ai_Gmail__update_label",
+    "mcp__claude_ai_Gmail__delete_label",
+    "mcp__claude_ai_Gmail__label_message",
+    "mcp__claude_ai_Gmail__label_thread",
+    "mcp__claude_ai_Gmail__unlabel_message",
+    "mcp__claude_ai_Gmail__unlabel_thread",
+    "mcp__claude_ai_Gmail__update_message_labels",
+    "mcp__claude_ai_Gmail__apply_sensitive_message_label",
+    "mcp__claude_ai_Gmail__apply_sensitive_thread_label",
+    "mcp__claude_ai_Gmail__mark_message_spam",
+    "mcp__claude_ai_Gmail__mark_thread_spam",
+    "mcp__claude_ai_Gmail__unmark_message_spam",
+    "mcp__claude_ai_Gmail__unmark_thread_spam",
+    "mcp__claude_ai_Google_Calendar__create_event",
+    "mcp__claude_ai_Google_Calendar__update_event",
+    "mcp__claude_ai_Google_Calendar__delete_event",
+    "mcp__claude_ai_Google_Calendar__respond_to_event",
+    "mcp__claude_ai_Google_Drive__create_file",
+    "mcp__claude_ai_Google_Drive__update_file",
+    "mcp__claude_ai_Google_Drive__copy_file",
+    "mcp__claude_ai_Google_Drive__share_file",
+    "mcp__claude_ai_Google_Drive__trash_file",
+    "mcp__claude_ai_Google_Drive__delete_file",
+    "mcp__claude_ai_Google_Drive__move_file",
+    "mcp__claude_ai_Google_Drive__upload_file",
+    "mcp__claude_ai_Slack__slack_send_message",
+    "mcp__claude_ai_Slack__slack_send_message_draft",
+    "mcp__claude_ai_Slack__slack_schedule_message",
+    "mcp__claude_ai_Slack__slack_create_canvas",
+    "mcp__claude_ai_Slack__slack_update_canvas",
+    "mcp__claude_ai_Slack__slack_add_reaction",
+    "mcp__claude_ai_Slack__slack_invite_user",
+    "mcp__claude_ai_Notion__notion-create-pages",
+    "mcp__claude_ai_Notion__notion-update-page",
+    "mcp__claude_ai_Notion__notion-move-pages",
+    "mcp__claude_ai_Notion__notion-duplicate-page",
+    "mcp__claude_ai_Notion__notion-create-database",
+    "mcp__claude_ai_Notion__notion-update-database",
+    "mcp__claude_ai_Notion__notion-update-data-source",
+    "mcp__claude_ai_Notion__notion-create-comment",
+    "mcp__claude_ai_Notion__notion-delete-page"
+  ],
+  "always_denied_patterns": [
+    "(?i)(^|[_-])(send|reply|forward|post|publish|share|invite|create|update|edit|write|modify|delete|remove|trash|archive|move|rename|upload|draft|label|unlabel|spam|respond|schedule|merge|deploy|execute|exec|run|apply|purchase|pay|refund|transfer|charge|cancel|subscribe|unsubscribe|reset|restore|set|enable|disable|install|uninstall|grant|revoke)([_-]|$)"
+  ]
+}

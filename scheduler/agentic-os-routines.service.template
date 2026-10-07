@@ -1,0 +1,10 @@
+[Unit]
+Description=Agentic OS routine runner (one tick)
+
+[Service]
+Type=oneshot
+WorkingDirectory=__ROOT__
+Environment="PATH=__PATH__"
+ExecStart="__PYTHON__" "__ROOT__/routines/run.py"
+StandardOutput=append:__ROOT__/routines/scheduler.log
+StandardError=append:__ROOT__/routines/scheduler.log

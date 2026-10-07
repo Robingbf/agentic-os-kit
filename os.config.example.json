@@ -1,0 +1,27 @@
+{
+  "setup_complete": false,
+  "name": "My OS",
+  "tagline": "Agentic OS",
+  "language": "en",
+  "timezone": "UTC",
+  "machine": "",
+  "currency": { "code": "USD", "symbol": "$", "usd_rate": 1.0 },
+  "claude_plan": "pro",
+  "clocks": [],
+  "panels": { "today": true, "next_days": false, "inbox": false, "capture": true, "waiting": false, "skills": true, "routines": true },
+  "today": { "widgets": ["clock", "clocks", "goal", "quarters"], "goal_label": "Next milestone" },
+  "topbar": { "machine_health": true, "claude_usage": true, "search": true },
+  "pages": [ { "id": "brain" } ],
+  "areas": [],
+  "brain": { "rings": ["skills", "memory", "routines", "apps"] },
+  "mail": {
+    "enabled": false,
+    "provider": "gmail",
+    "watch": { "interval_min": 30, "day_start": 7, "day_end": 23 },
+    "labels": [],
+    "fallback_by_area": {}
+  },
+  "off_limits": [],
+  "search_roots": ["~"],
+  "dashboard": { "port": 8765, "accent": "#ff7a2f", "tone": "inform" }
+}

@@ -1,0 +1,4 @@
+#!/bin/sh
+# Blocks any commit that contains a probable secret (patterns in tools/snapshot.py).
+# Enable once with: git config core.hooksPath .githooks
+exec python3 "$(git rev-parse --show-toplevel)/tools/snapshot.py" --check
