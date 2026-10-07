@@ -64,6 +64,7 @@ python3 memory-map/check.py          # check the memory map (exit 1 on any probl
 python3 routines/build_brain.py      # rebuild the brain graph
 python3 routines/build_today.py      # rebuild Today / Projects data
 bash scheduler/install.sh            # install the 5-minute scheduler (asks for confirmation)
+bash tools/desktop-app/build.sh      # macOS desktop app (Linux: tools/desktop-app/linux.sh)
 ```
 
 After editing dashboard Python code, the server shows a ↻ restart button.

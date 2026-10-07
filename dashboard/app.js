@@ -301,7 +301,7 @@ icons();
     const short = l => String(l || "").split("/").pop().trim() || String(l || "");
     const doBtns = thread ? acts.filter(a => a.type === "archive" || (a.type === "file" && /^[\w À-ÿ'\/.&-]{1,60}$/.test(a.label || ""))).slice(0, 2).map(a =>
       `<button class="do" data-gmail="${esc(thread)}" data-act="${a.type}" data-label="${esc(a.label || "")}" data-item="${esc(x.id)}" title="${a.type === "archive" ? "Move out of the inbox" : "Apply the label “" + esc(a.label) + "” and move out of the inbox"}">` +
-      `${ph(a.type === "archive" ? "archive" : "folder")}<span class="gl">${a.type === "archive" ? "Archive" : "File · " + esc(short(a.label))}</span></button>`).join("") : "";
+      `${ph(a.type === "archive" ? "archive" : "folder")}<span class="gl">${a.type === "archive" ? "Archive" : esc(short(a.label))}</span></button>`).join("") : "";
     const sugs = sugList.map(t => `<span class="sug">${ph("sparkle")}${esc(t)}</span>`).join("");
     return `<li class="item ${x.action ? "todo" : "info"} ${isDone ? "done" : ""}">` +
       (x.action ? `<button class="chk" data-done="${esc(x.id)}" aria-pressed="${isDone}" title="${isDone ? "Mark as to do" : "Mark as done"}">${isDone ? ph("check-circle") : ""}</button>`
@@ -541,17 +541,42 @@ icons();
       dot.className = "dot " + (h.restart_needed ? "warn" : "ok");
       v.textContent = h.restart_needed ? "" : `UP ${upTxt}`;
       $("st-restart").hidden = !h.restart_needed;
+      $("srv-start").hidden = true;
+      $("srv-stop").hidden = false;
       health.started = h.started_at;
       box.title = h.restart_needed ? "The server code changed since launch: restart it" : `Started ${new Date(h.started_at).toLocaleString()}`;
     } catch (e) {
       const old = String(e.message) === "404";
       dot.className = "dot " + (old ? "warn" : "bad");
       v.textContent = old ? "RESTART (manually)" : "OFF";
+      $("srv-start").hidden = old;
+      $("srv-stop").hidden = true;
       $("st-restart").hidden = true;
       box.title = old ? "Server older than this indicator: stop it and start it again" : "Server unreachable: start dashboard/server.py again";
     }
   }
   health(); setInterval(health, 15000);
+  $("srv-stop").onclick = async () => {
+    if (!confirm("Stop the dashboard server?\n\nThe dashboard stops updating and its buttons stop working until the next ▶ start. Scheduled routines keep running.")) return;
+    const b = $("srv-stop"); b.textContent = "stopping…"; b.disabled = true;
+    try { await fetch("/shutdown", { method: "POST", headers: { "X-Dashboard": "1" } }); } catch {}
+    setTimeout(() => { b.textContent = "■ stop"; b.disabled = false; health(); }, 1500);
+  };
+
+  // ▶ start: in the desktop app, the app starts the server itself; in a browser, copy the command to run
+  $("srv-start").onclick = async () => {
+    const b = $("srv-start"), bridge = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.osApp;
+    if (bridge) {
+      b.textContent = "starting…"; b.disabled = true;
+      bridge.postMessage("startServer");   // the app reloads the page as soon as the server answers
+      setTimeout(() => { b.textContent = "▶ start"; b.disabled = false; }, 15000);
+      return;
+    }
+    const root = (window.OS_CONFIG && window.OS_CONFIG.root) || "<your OS folder>";
+    const cmd = `cd "${root}" && python3 dashboard/server.py`;
+    try { await navigator.clipboard.writeText(cmd); } catch {}
+    alert(`A browser cannot start the server by itself.\nThe command is copied — paste it in a Terminal:\n\n${cmd}\n\nOr open the desktop app, which starts it for you (bash tools/desktop-app/build.sh).`);
+  };
 
   // ↻ restart: the server restarts itself; wait for the new one, then reload the page
   $("st-restart").onclick = async () => {

@@ -250,7 +250,7 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/search":
             return self.search()
         if path == "/config.json":  # safe for the browser: no off-limits paths, no search roots
-            return self.reply(200, {k: v for k, v in cfg().items() if k not in ("off_limits", "search_roots")})
+            return self.reply(200, {**{k: v for k, v in cfg().items() if k not in ("off_limits", "search_roots")}, "root": ROOT})
         if path == "/ops":
             import ops  # inventory of automatic activity and its costs
             return self.reply(200, ops.build())
@@ -367,6 +367,11 @@ class Handler(BaseHTTPRequestHandler):
             if os.path.isdir(CHAT_DIR):
                 write_json(os.path.join(CHAT_DIR, "session.json"), {})
             return self.reply(200, {"new": True})
+        if path == "/shutdown":
+            # ■ stop button: stops the dashboard server (scheduled routines keep running via the scheduler)
+            self.reply(202, {"stopping": True})
+            threading.Timer(0.3, lambda: os._exit(0)).start()
+            return
         if path == "/restart":
             # Re-exec in place (same process, same terminal) to load the new server.py
             self.reply(202, {"restarting": True})

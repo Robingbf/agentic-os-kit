@@ -11,7 +11,7 @@
    first and fix layout or console errors before showing it.
 3. **Walk them through it**, left to right, in plain words: Today, the panels they enabled, the brain and
    its views (rings = skills, memory, routines, apps around their areas), their pages, the skills deck,
-   routines, the top bar (runner, map check, computer health, Claude quota, "/" search and chat, ⚙ costs).
+   routines, the top bar (▶ start when the server is off, runner, map check, computer health, Claude quota, "/" search and chat, server with ■ stop, ⚙ costs).
 4. **Adjust** with them: accent colour (`dashboard.accent`), area colours (click the colour dot on an area
    chip in the brain), page order, which panels stay. Each change: edit `os.config.json`, reload the page.
 5. **Mail plan** (only if enabled in the blueprint): the "File · <label>" buttons need the labels to exist

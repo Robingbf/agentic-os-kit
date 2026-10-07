@@ -109,12 +109,9 @@ or gives you the address http://127.0.0.1:8765 to open in your browser.
 
 ## Every day after setup
 
-```bash
-cd ~/agentic-os && python3 dashboard/server.py
-```
-
-then open **http://127.0.0.1:8765** in your browser (bookmark it). Ask Claude to make the dashboard
-start automatically if you prefer.
+Open your OS **app** (created at the end of the setup — macOS: `bash tools/desktop-app/build.sh`, Linux:
+`bash tools/desktop-app/linux.sh`). It starts everything by itself; ▶ start / ■ stop are in the top bar.
+Without the app: `cd ~/agentic-os && python3 dashboard/server.py`, then open http://127.0.0.1:8765.
 
 ## Troubleshooting
 

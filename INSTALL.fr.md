@@ -75,10 +75,9 @@ panneau d'aperçu, ou Claude te donne l'adresse http://127.0.0.1:8765 à ouvrir 
 ---
 
 ## Au quotidien
-```bash
-cd ~/agentic-os && python3 dashboard/server.py
-```
-puis ouvre **http://127.0.0.1:8765** dans ton navigateur (mets-le en favori).
+Ouvre l'**app** de ton OS, créée à la fin de la configuration (macOS : `bash tools/desktop-app/build.sh`, Linux :
+`bash tools/desktop-app/linux.sh`). Elle démarre tout toute seule ; ▶ start / ■ stop sont dans la barre du haut.
+Sans l'app : `cd ~/agentic-os && python3 dashboard/server.py`, puis ouvre http://127.0.0.1:8765.
 
 ## En cas de problème
 | Problème | Solution |

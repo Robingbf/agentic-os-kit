@@ -10,6 +10,7 @@ Agentic OS Kit transforme [Claude Code](https://claude.com/claude-code) en centr
 - ⏱ **Routines** : de petites tâches planifiées qui préparent les choses pour toi (digest du matin, statistiques, rappels, bilan de la semaine), avec des plafonds de coût.
 - 🖥 **Dashboard** : une page privée sur ton ordinateur avec Today, tes pages, un « cerveau » vivant de ton travail, un deck de skills, tes routines, le quota Claude et la santé de ta machine, et une palette « / » pour chercher dans tes fichiers ou poser une question à Claude.
 - ✦ **Skills** : tes tâches répétitives, lançables en un clic ou en une phrase.
+- 🪟 **App de bureau** : ton OS s'ouvre comme n'importe quelle app (sa propre icône, à ta couleur) ; il démarre tout seul, avec ▶ start / ■ stop dans la barre du haut.
 
 Le dépôt ne contient **aucune donnée et aucune configuration toute faite**. Quand tu l'ouvres dans Claude
 Code, une configuration guidée (10 « cartes » courtes) t'interroge : ce que tu fais, ta semaine, tes outils,
@@ -50,7 +51,7 @@ Jamais utilisé de terminal ? Suis le guide pas à pas : **[INSTALL.fr.md](INSTA
 ### Après l'installation
 
 - Ouvre tes sessions Claude Code **dans `~/agentic-os`** : le `CLAUDE.md` du kit se charge tout seul, reprend la configuration là où tu t'es arrêté et, une fois terminée, fonctionne comme ton OS.
-- Dashboard : `python3 dashboard/server.py`, puis http://127.0.0.1:8765 (ou demande simplement à Claude : « lance mon dashboard »).
+- Dashboard : ouvre l'**app de bureau** créée pendant la configuration (macOS : `bash tools/desktop-app/build.sh`), ou `python3 dashboard/server.py` puis http://127.0.0.1:8765.
 
 ## Les cartes de configuration
 

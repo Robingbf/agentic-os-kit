@@ -11,7 +11,17 @@ Tell them: when the computer sleeps (lid closed), routines pause and catch up on
 digest ready before they open the laptop: `sudo pmset repeat wakeorpoweron MTWRFSU 07:25:00` (macOS,
 works reliably on power) — they run it themselves (it asks for their password).
 
-## 2. Session journals (optional)
+## 2. Desktop app (recommended for everyone)
+Explain: "your OS becomes a real app with its own icon: you open it like any app, it starts everything it
+needs by itself, and the dashboard has ▶ start / ■ stop buttons in the top bar."
+- macOS: `bash tools/desktop-app/build.sh` → `~/Applications/<OS name>.app` (needs the Command Line Tools:
+  `xcode-select --install`). Open it, then right-click its Dock icon → Options → Keep in Dock. Optional: System
+  Settings → General → Login Items → add it, so the OS opens at login.
+- Linux: `bash tools/desktop-app/linux.sh` (asks before adding a menu entry).
+- Anything else / no build: `bash tools/desktop-app/launch.sh` opens the dashboard in an app-style window.
+Rebuild the macOS app whenever the OS name, accent colour or port changes.
+
+## 3. Session journals (optional)
 Explain: "when you finish a Claude Code session inside one of your projects, a short note of what was
 done and where you stopped is saved for that area, and shown back next time you open it."
 With their yes: back up `~/.claude/settings.json` (copy with a date suffix), then **add** (never replace)
@@ -19,7 +29,7 @@ hooks: `SessionStart` and `SessionEnd` → `python3 <ROOT>/hooks/session_journal
 `statusLine` → `python3 <ROOT>/hooks/statusline.py` (shows the quota in the terminal and feeds the
 dashboard gauge). Keep any existing hooks. Show the diff before saving.
 
-## 3. Backups
+## 4. Backups
 The OS folder is a git repository. Offer: nightly snapshot (already in the registry: `git-snapshot`,
 commits only if something changed, blocks commits that look like secrets). Personal files are
 git-ignored by default — explain that this means **they are not backed up by git**; suggest their usual
@@ -29,4 +39,4 @@ Optional private remote: with their yes, `gh repo create <name> --private --sour
 GitHub CLI and login) — never public.
 
 ## Done when
-Scheduler installed (or consciously skipped), hooks decided, backup plan clear. Next: card 09.
+Scheduler installed (or consciously skipped), desktop app built and opened once, hooks decided, backup plan clear. Next: card 09.

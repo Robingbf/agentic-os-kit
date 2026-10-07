@@ -9,8 +9,8 @@
    once, `git status` shows no personal file staged.
 2. **Cost summary:** open ⚙ Settings in the dashboard together; read the estimated monthly cost of all
    automatic activity and compare with their plan. Adjust (less frequent, cheaper model) if they want.
-3. **How to use it, in 5 lines** (write it to `interviews/how-to.md` too): open the dashboard; press
-   "/" to search or ask; ▶ in the skills deck; capture an idea in Capture; ask Claude "add a page / a
+3. **How to use it, in 5 lines** (write it to `interviews/how-to.md` too): open the app (or the dashboard); press
+   "/" to search or ask; ▶ start / ■ stop in the top bar; ▶ in the skills deck; capture an idea in Capture; ask Claude "add a page / a
    routine / a skill for …" in this folder.
 4. **How to change it:** `docs/CUSTOMISING.md`; re-run any card ("redo card 04").
 5. Set `"setup_complete": true` in `os.config.json`, mark card 09 done in `setup/progress.json`.
