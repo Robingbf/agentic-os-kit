@@ -17,9 +17,13 @@ and then builds *your* OS: only the panels, pages, routines and skills that are 
 creator gets a Content page, a freelancer a Clients page, a student an Exams page.
 
 
-## ⚡ One prompt does everything
+## Installation
 
-Open Claude Code (terminal, desktop app Code tab, or IDE extension) in any folder and paste this:
+**Requirements:** macOS or Linux (Windows via WSL2) · Python 3.10+ · Git · [Claude Code](https://docs.claude.com/en/docs/claude-code/setup) with a Claude Pro / Max / Team plan (or an API key). Nothing else: no npm, no build, no database.
+
+### Option 1 — With a prompt (recommended)
+
+Open Claude Code anywhere (terminal, the **Code** tab of the Claude desktop app, or your IDE extension) and paste:
 
 ```text
 Install my personal agentic OS from https://github.com/Robingbf/agentic-os-kit and set it up for me.
@@ -31,24 +35,23 @@ Talk to me in my language, one question at a time, explain things simply, and as
 permanent change.
 ```
 
-Next time, open your session directly in `~/agentic-os`: the kit's `CLAUDE.md` loads by itself and
-resumes the setup where you stopped (or, once it is done, works as your OS).
+Claude downloads the kit, checks your computer, then starts the guided setup right away.
 
-## Install (15 minutes, then the guided setup)
-
-👉 **Step-by-step guide for non-developers: [INSTALL.md](INSTALL.md)** — with the terminal, or with no terminal at all from the Claude desktop app (Option B) · 🇫🇷 [Version française](README.fr.md)
-
-Short version, if you are used to the terminal:
+### Option 2 — Manually
 
 ```bash
 git clone https://github.com/Robingbf/agentic-os-kit.git ~/agentic-os
 cd ~/agentic-os
-bash setup.sh        # checks Python, Claude Code, creates the private folders
-claude               # then just say: "hi, let's set up my OS"
+bash setup.sh        # checks Python, Claude Code, Git and creates the private folders
+claude               # then say: "hi, let's set up my OS"
 ```
 
-Requirements: macOS or Linux (Windows via WSL2), Python 3.10+, Claude Code with a Claude Pro / Max /
-Team plan (or an API key). Everything else is standard library — no npm, no build, no database.
+Never used a terminal? Follow the step-by-step guide: **[INSTALL.md](INSTALL.md)** (🇫🇷 [INSTALL.fr.md](INSTALL.fr.md)).
+
+### After installing
+
+- Open your Claude Code sessions **in `~/agentic-os`**: the kit's `CLAUDE.md` loads by itself, resumes the setup where you stopped, and once it is done works as your OS.
+- Dashboard: `python3 dashboard/server.py`, then http://127.0.0.1:8765 (or just ask Claude: "start my dashboard").
 
 ## How the setup works
 

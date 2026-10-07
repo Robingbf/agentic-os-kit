@@ -16,9 +16,13 @@ Code, une configuration guidée (10 « cartes » courtes) t'interroge : ce que t
 ce que tu oublies. Ensuite, elle construit **ton** OS, avec seulement les panneaux, pages, routines et skills
 qui te servent. Un vidéaste aura une page Contenu, un freelance une page Clients, un étudiant une page Examens.
 
-## ⚡ Un seul prompt fait tout
+## Installation
 
-Ouvre Claude Code (Terminal, onglet Code de l'application Claude, ou extension d'éditeur) dans n'importe quel dossier et colle ceci :
+**Prérequis :** macOS ou Linux (Windows via WSL2) · Python 3.10+ · Git · [Claude Code](https://docs.claude.com/en/docs/claude-code/setup) avec un abonnement Claude Pro / Max / Team (ou une clé API). Rien d'autre : ni npm, ni build, ni base de données.
+
+### Option 1 : avec un prompt (conseillé)
+
+Ouvre Claude Code n'importe où (Terminal, onglet **Code** de l'application Claude, ou extension d'éditeur) et colle :
 
 ```text
 Installe mon OS agentique personnel depuis https://github.com/Robingbf/agentic-os-kit et configure-le pour moi.
@@ -30,23 +34,23 @@ Parle-moi en français, une question à la fois, explique simplement, et demande
 changement permanent.
 ```
 
-Les fois suivantes, ouvre ta session directement dans `~/agentic-os` : le `CLAUDE.md` du kit se charge
-tout seul et reprend la configuration là où tu t'es arrêté (ou, une fois terminée, fonctionne comme ton OS).
+Claude télécharge le kit, vérifie ton ordinateur, puis lance directement la configuration guidée.
 
-## Installation
-
-👉 **Guide pas à pas, sans expérience requise : [INSTALL.fr.md](INSTALL.fr.md)**, avec le Terminal, ou sans terminal depuis l'application Claude (option B)
-
-En bref :
+### Option 2 : à la main
 
 ```bash
 git clone https://github.com/Robingbf/agentic-os-kit.git ~/agentic-os
 cd ~/agentic-os
-bash setup.sh
-claude          # puis dis : « salut, on configure mon OS »
+bash setup.sh        # vérifie Python, Claude Code, Git et crée les dossiers privés
+claude               # puis dis : « salut, on configure mon OS »
 ```
 
-Prérequis : macOS ou Linux (Windows via WSL2), Python 3.10+, Claude Code avec un abonnement Claude Pro / Max / Team (ou une clé API).
+Jamais utilisé de terminal ? Suis le guide pas à pas : **[INSTALL.fr.md](INSTALL.fr.md)**.
+
+### Après l'installation
+
+- Ouvre tes sessions Claude Code **dans `~/agentic-os`** : le `CLAUDE.md` du kit se charge tout seul, reprend la configuration là où tu t'es arrêté et, une fois terminée, fonctionne comme ton OS.
+- Dashboard : `python3 dashboard/server.py`, puis http://127.0.0.1:8765 (ou demande simplement à Claude : « lance mon dashboard »).
 
 ## Les cartes de configuration
 
