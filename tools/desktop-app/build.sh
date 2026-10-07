@@ -57,6 +57,10 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>CFBundleVersion</key><string>1</string>
   <key>LSMinimumSystemVersion</key><string>13.0</string>
   <key>NSHighResolutionCapable</key><true/>
+  <key>NSDocumentsFolderUsageDescription</key><string>Your OS reads and saves your project documents (preview, search, brain).</string>
+  <key>NSDesktopFolderUsageDescription</key><string>Your OS reads and saves your project documents (preview, search, brain).</string>
+  <key>NSDownloadsFolderUsageDescription</key><string>Your OS reads and saves your project documents (preview, search, brain).</string>
+  <key>NSFileProviderDomainUsageDescription</key><string>Your OS reads and saves your project documents (preview, search, brain).</string>
   <key>NSAppTransportSecurity</key><dict><key>NSAllowsLocalNetworking</key><true/></dict>
   <key>OSRoot</key><string>$ROOT</string>
   <key>OSPort</key><string>$PORT</string>
