@@ -17,6 +17,23 @@ and then builds *your* OS: only the panels, pages, routines and skills that are 
 creator gets a Content page, a freelancer a Clients page, a student an Exams page.
 
 
+## ⚡ One prompt does everything
+
+Open Claude Code (terminal, desktop app Code tab, or IDE extension) in any folder and paste this:
+
+```text
+Install my personal agentic OS from https://github.com/Robingbf/agentic-os-kit and set it up for me.
+1. Clone it into ~/agentic-os (if that folder already exists, use it and don't overwrite anything).
+2. Run `bash setup.sh` inside it and fix, with my permission, anything that is missing.
+3. Read ~/agentic-os/CLAUDE.md and ~/agentic-os/setup/START.md, then run the guided setup cards
+   from setup/cards/ in order, working inside ~/agentic-os.
+Talk to me in my language, one question at a time, explain things simply, and ask before any
+permanent change.
+```
+
+Next time, open your session directly in `~/agentic-os`: the kit's `CLAUDE.md` loads by itself and
+resumes the setup where you stopped (or, once it is done, works as your OS).
+
 ## Install (15 minutes, then the guided setup)
 
 👉 **Step-by-step guide for non-developers: [INSTALL.md](INSTALL.md)** — with the terminal, or with no terminal at all from the Claude desktop app (Option B) · 🇫🇷 [Version française](README.fr.md)

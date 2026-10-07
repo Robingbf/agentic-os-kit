@@ -16,6 +16,23 @@ Code, une configuration guidée (10 « cartes » courtes) t'interroge : ce que t
 ce que tu oublies. Ensuite, elle construit **ton** OS, avec seulement les panneaux, pages, routines et skills
 qui te servent. Un vidéaste aura une page Contenu, un freelance une page Clients, un étudiant une page Examens.
 
+## ⚡ Un seul prompt fait tout
+
+Ouvre Claude Code (Terminal, onglet Code de l'application Claude, ou extension d'éditeur) dans n'importe quel dossier et colle ceci :
+
+```text
+Installe mon OS agentique personnel depuis https://github.com/Robingbf/agentic-os-kit et configure-le pour moi.
+1. Clone-le dans ~/agentic-os (si ce dossier existe déjà, utilise-le sans rien écraser).
+2. Lance `bash setup.sh` dedans et corrige, avec mon accord, ce qui manque.
+3. Lis ~/agentic-os/CLAUDE.md et ~/agentic-os/setup/START.md, puis déroule les cartes de configuration
+   de setup/cards/ dans l'ordre, en travaillant dans ~/agentic-os.
+Parle-moi en français, une question à la fois, explique simplement, et demande-moi avant tout
+changement permanent.
+```
+
+Les fois suivantes, ouvre ta session directement dans `~/agentic-os` : le `CLAUDE.md` du kit se charge
+tout seul et reprend la configuration là où tu t'es arrêté (ou, une fois terminée, fonctionne comme ton OS).
+
 ## Installation
 
 👉 **Guide pas à pas, sans expérience requise : [INSTALL.fr.md](INSTALL.fr.md)**, avec le Terminal, ou sans terminal depuis l'application Claude (option B)
