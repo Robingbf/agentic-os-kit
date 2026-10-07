@@ -1278,3 +1278,24 @@ icons();
   refresh().then(() => { if (current === "business") renderBusiness(); if (current === "projects") renderProjects(); });
   setInterval(refresh, APP.REFRESH_MS);
 })();
+
+// Favicon: the brain's central hexagon, in the accent colour; turns red when something needs attention
+// (a red status dot in the top bar, or a routine in error).
+(function () {
+  const link = document.getElementById("favicon");
+  if (!link) return;
+  let last = "";
+  function setFavicon() {
+    const accent = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#ff7a2f";
+    const bad = document.querySelector(".top .dot.bad, .top .mi.bad, .rlist .stp.err");
+    const c = bad ? "#ff5a4f" : accent;
+    if (c === last) return;
+    last = c;
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='#0a0c0f'/>` +
+      `<polygon points='32,9 52,20.5 52,43.5 32,55 12,43.5 12,20.5' fill='${c}' fill-opacity='.22' stroke='${c}' stroke-width='5' stroke-linejoin='round'/>` +
+      `<circle cx='32' cy='32' r='5' fill='${c}'/></svg>`;
+    link.href = "data:image/svg+xml," + encodeURIComponent(svg);
+  }
+  setFavicon();
+  setInterval(setFavicon, 5000);
+})();
