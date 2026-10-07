@@ -39,7 +39,7 @@ git clone https://github.com/Robingbf/agentic-os-kit.git ~/agentic-os
 cd ~/agentic-os
 bash setup.sh
 ```
-Remplace l'adresse par celle du bouton vert **Code** sur GitHub. Pas de Git ? Clique sur **Code → Download ZIP**, dézippe, renomme le dossier `agentic-os`, place-le dans ton dossier personnel, puis : `cd ~/agentic-os && bash setup.sh`.
+Pas de Git ? Clique sur **Code → Download ZIP**, dézippe, renomme le dossier `agentic-os`, place-le dans ton dossier personnel, puis : `cd ~/agentic-os && bash setup.sh`.
 ✅ `setup.sh` se termine par « Ready. Now run: claude ».
 
 ## Étape 6 : lancer Claude dans le dossier du kit

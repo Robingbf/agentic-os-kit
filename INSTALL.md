@@ -57,8 +57,7 @@ cd ~/agentic-os
 bash setup.sh
 ```
 
-(`<you>` is the account that hosts this repository — copy the exact address from the green **Code**
-button on GitHub.) No Git? Click **Code → Download ZIP** on GitHub, unzip it, rename the folder
+No Git? Click **Code → Download ZIP** on GitHub, unzip it, rename the folder
 `agentic-os`, move it to your home folder, then in the Terminal: `cd ~/agentic-os && bash setup.sh`.
 
 ✅ `setup.sh` ends with "Ready. Now run: claude".
