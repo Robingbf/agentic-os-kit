@@ -3,8 +3,14 @@
 ## Built-in
 - **Brain** (always): the memory map as a living graph — areas in the centre, then rings of skills,
   memory, routines and apps. Six views (rings, circle, areas, links, timeline, 3D orbit).
-- **Projects**: one card per area with `journal: true` — milestones, open tasks (checkboxes found in the
-  area's State files and session journals), last session summary and "stopped at".
+- **Projects** (optional base, adapted by the setup): a board of projects by status (Ideas → In development →
+  Launch → Live → Paused by default) and, per project, an overview (progress, next milestone, "Next time", last
+  session, links), a task kanban (To triage / To do / In progress / Blocked / Done, with importance, due dates, tags,
+  notes), a timeline (tasks + milestones from `goals.json`) and an Ideas tab. Data: `projects/<id>.json`. It syncs by
+  itself with session journals (open tasks, done tasks, "Next time") and captured ideas. Statuses, columns and
+  importance levels are renamed in `os.config.json` → `projects`, so it fits other kinds of work: a creator might use
+  columns Script / Shoot / Edit / Publish, a freelancer Lead / Quote / In progress / Invoiced / Paid, a student
+  To read / Writing / Submitted. Removed entirely when the user does not manage projects with tasks.
 - **Business**: revenue (from a routine writing `dashboard/data/metrics.json`, e.g. from Stripe) vs costs
   (editable table, stored in `state/costs.json`), one gains-vs-costs chart, monthly total.
 - **Settings** (⚙ button): every automatic activity, its frequency and measured cost, the plan value.

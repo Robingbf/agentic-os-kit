@@ -153,14 +153,13 @@ const CFG = {
   }
 
   function header(ts, err) {
-    const badge = panel.querySelector(".brain-badge"), tsEl = document.getElementById("brain-ts"), top = document.getElementById("st-brain");
+    const badge = panel.querySelector(".brain-badge"), tsEl = document.getElementById("brain-ts");
     if (!ts) { badge.textContent = err || "unavailable"; tsEl.textContent = "brain unavailable"; return; }
     const t = new Date(ts), h = (Date.now() - t) / 3.6e6, stale = !(h <= CFG.STALE_HOURS);
     const p = v => String(v).padStart(2, "0");
     const s = `${p(t.getDate())}.${p(t.getMonth() + 1)} ${p(t.getHours())}:${p(t.getMinutes())}`;
     tsEl.textContent = `brain ${s}${stale ? " · stale" : ""}`;
     tsEl.style.color = stale ? "var(--accent)" : "";
-    if (top) top.textContent = s;
     badge.textContent = stale ? "brain stale" : "";
   }
 
@@ -596,6 +595,14 @@ const CFG = {
       const copy = el("button", "pill", "copy path");
       copy.onclick = async () => { try { await navigator.clipboard.writeText(n.path); copy.textContent = "copied ✓"; } catch { copy.textContent = "copy failed"; } };
       bar.append(open, copy);
+      // preview: .md / .txt documents (preview + edit) and folders (browsable list) in the right-side panel
+      const isDoc = /\.(md|txt)$/i.test(n.path), maybeDir = n.path.startsWith("/") && !/\.[a-z0-9]{1,6}$/i.test(n.path);
+      if ((isDoc || maybeDir) && window.openMdPreview) {
+        const prev = el("button", "pill", "preview");
+        prev.style.borderColor = "var(--accent)"; prev.style.color = "var(--accent)";
+        prev.onclick = () => isDoc ? window.openMdPreview(n.id, n.label) : window.openPathPreview(n.path, n.label);
+        bar.prepend(prev);
+      }
     }
     const fly = el("button", "pill", "fly to"); fly.onclick = () => flyTo(n);
     bar.append(fly);
@@ -670,6 +677,13 @@ const CFG = {
       fetch("/prefs", { method: "POST", headers: { "X-Dashboard": "1", "Content-Type": "application/json" }, body: JSON.stringify({ area_colors: custom }) }).catch(() => {});
     }, 400);
   }
+  // colour changed elsewhere (project page): the brain follows without saving again
+  window.addEventListener("projectcolor", e => {
+    const { area, color } = e.detail || {};
+    if (!area || !areaColor.has(area)) return;
+    areaColor.set(area, color);
+    chips(); kick();
+  });
   function setAreaColor(area, color) {
     window.AREA_COLOR[area] = color;
     areaColor.set(area, color);

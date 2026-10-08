@@ -21,6 +21,8 @@ Format and rules: `memory-map/README.md` and `memory-map/areas/_example.md`.
    Skills, Memory, Routines, Not here. Each line: `- [name](absolute path or https URL): one-line note`.
    Old or paused things go to `memory-map/archive.md`. Every fact has one home: the map only points.
 5. **Add areas to** `os.config.json` → `areas` (`id`, `label`, `color`, `journal`).
+   These ids are reused everywhere: if the Projects page is kept (card 04), card 05 creates `projects/<id>.json`
+   with the same ids so journals, ideas, milestones and colours line up.
 6. **Check:** run `python3 memory-map/check.py` and fix every problem until it exits 0. Run
    `python3 routines/build_brain.py` so the brain shows their map.
 7. Explain the two-hop idea in one sentence and show one example ("ask me where your invoices are").

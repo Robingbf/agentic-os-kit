@@ -6,6 +6,13 @@ Read `routines/registry.json` and one existing prompt (e.g. `routines/prompts/mo
 copy the conventions. Placeholders available in prompts: `{{language}}`, `{{os_name}}`, `{{areas}}`,
 `{{mail_plan}}`, `{{timezone}}`, plus routine params as `{{param}}`.
 
+## First: project files (only if the blueprint keeps the Projects page)
+Create one `projects/<id>.json` per project the user named (usually one per area, **same id as the area** so session
+journals, captured ideas, milestones and colours connect by themselves). Format: `CLAUDE.md` → "Project files". Fill
+`label`, `status` (one of their `projects.statuses` ids), `objective` in their words, and the first tasks they gave
+during the interview (column = their first column unless they said otherwise, never invented, in their order).
+Open the dashboard's Projects page with them and fix anything that looks wrong.
+
 ## For each routine
 
 1. **Prompt file** in `routines/prompts/custom/<name>.md` (git-ignored, personal). Structure: role in one

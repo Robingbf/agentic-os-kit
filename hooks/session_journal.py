@@ -39,7 +39,7 @@ CATCHUP_MAX = 5                       # catch-up: sessions summarised per start
 LINK = re.compile(r"^- \[([^\]]+)\]\((<[^>]+>|[^)\s<>]+)\):")
 GUARD = "AOS_JOURNAL"                 # set by the OS's own sessions: prevents a summary from triggering a summary
 # Journal headings (also parsed by routines/inbox_apply.py and the dashboard builders)
-H_LAST, H_OPEN, H_DONE, H_HISTORY = "Last session", "Open tasks", "Done recently", "History"
+H_LAST, H_NEXT, H_OPEN, H_DONE, H_HISTORY = "Last session", "Next time", "Open tasks", "Done recently", "History"
 
 # Secrets: never in the journal (it is shown on the dashboard and injected into sessions)
 SECRET_PATTERNS = [
@@ -149,7 +149,8 @@ Update the journal. Write every text value in {language}. Answer ONLY with a val
   "summary": "1 or 2 sentences: what was done during this session",
   "stopped_at": "where the user stopped, concretely (file, feature, bug...)",
   "open": ["tasks still open for this area, short sentences; keep the journal's tasks that are not done, add new ones, remove the ones done"],
-  "done": ["tasks finished during THIS session"]
+  "done": ["tasks finished during THIS session"],
+  "next": "ONLY if the user explicitly said what they want to do next time (“next time…”, “tomorrow we'll…”, “we'll pick up with…”): their words, in one sentence. Otherwise an empty string."
 }}
 No prioritisation and no advice on what to do next: only the state.
 NEVER write a password, API key, token or secret identifier, even if it appears in the conversation: write "(secret not recorded here)".
@@ -258,10 +259,14 @@ def write_journal(area, data, now):
     stamp = now.strftime("%Y-%m-%d %H:%M")
     tidy = lambda t: redact(re.sub(r"^(\[[ xX]\]\s*)+", "", str(t).strip()))
     data = {"summary": tidy(data.get("summary", "")), "stopped_at": tidy(data.get("stopped_at", "")),
-            "open": [tidy(t) for t in data.get("open", []) if str(t).strip()], "done": [tidy(t) for t in data.get("done", []) if str(t).strip()]}
+            "open": [tidy(t) for t in data.get("open", []) if str(t).strip()], "done": [tidy(t) for t in data.get("done", []) if str(t).strip()],
+            "next": tidy(data.get("next", ""))}
+    if not data["next"] and f"## {H_NEXT}\n" in old:  # nothing new: keep the user's last "next time" note
+        data["next"] = old.split(f"## {H_NEXT}\n", 1)[1].split("\n## ", 1)[0].strip()
     history = [f"{stamp} · {data['summary']}"] + [h for h in history if not h.startswith(stamp)]
     lines = [f"# Journal · {area}", "", "Updated automatically at the end of every Claude Code session in this area.", "",
              f"## {H_LAST}", f"{stamp} · {data['summary']}", f"Stopped at: {data['stopped_at']}", "",
+             *([f"## {H_NEXT}", data["next"], ""] if data["next"] else []),
              f"## {H_OPEN}"] + [f"- [ ] {t}" for t in data["open"]] + ["",
              f"## {H_DONE}"] + [f"- [x] {t}" for t in data["done"]] + ["",
              f"## {H_HISTORY}"] + [f"- {h}" for h in history[:HISTORY_KEEP]] + [""]

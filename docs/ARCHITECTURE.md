@@ -7,7 +7,7 @@ Pulse, Screen), and ships the code for three of them (Memory, Pulse, Screen) rea
 personalised by a guided setup.
 
 Nothing in the repository is about a specific person. Everything personal is produced by the
-setup cards and lives in files that are **git-ignored**: `os.config.json`, `goals.json`,
+setup cards and lives in files that are **git-ignored**: `os.config.json`, `goals.json`, `projects/`,
 `memory-map/areas/`, `interviews/`, `state/`, `dashboard/data/`, `routines/prompts/custom/`.
 
 ## Folder layout
@@ -19,7 +19,8 @@ setup/                    the guided setup: START.md + cards/ + catalog/ (pages,
 memory-map/               MAP.md (master signpost), areas/<id>.md (one signpost per area), check.py
 routines/                 registry.json, run.py (runner), prompts/, helpers (mcp_guard, usage_probe, …)
 hooks/                    session_journal.py (SessionStart/SessionEnd), statusline.py
-dashboard/                server.py (stdlib only, 127.0.0.1), index.html, app.js, brain.js, vendor/
+dashboard/                server.py (stdlib only, 127.0.0.1), index.html, app.js, brain.js, projects.py/.js, vendor/
+projects/                 one JSON file per project (tasks, ideas, status, links) for the Projects page (git-ignored)
 scheduler/                launchd (macOS), systemd user timer (Linux), cron line; install script
 tools/                    snapshot.py (nightly git snapshot), macsensors.c (optional macOS temps)
 docs/                     this file, CUSTOMISING.md, SECURITY.md
@@ -52,7 +53,7 @@ Every path is resolved relative to the repository root (`ROOT`), so the folder c
   "topbar": { "machine_health": true, "claude_usage": true, "search": true },
   "pages": [                          // centre tabs, in order. "brain" is always first.
     { "id": "brain" },
-    { "id": "projects", "title": "Projects" },             // built-in: projects from areas + session journals
+    { "id": "projects", "title": "Projects" },             // built-in: project management (projects/<id>.json), optional
     { "id": "business", "title": "Business" },             // built-in: revenue (from a metrics routine) vs costs
     { "id": "content", "title": "Content", "kind": "custom", "icon": "video-camera" }  // custom page
   ],
@@ -68,7 +69,12 @@ Every path is resolved relative to the repository root (`ROOT`), so the folder c
   },
   "off_limits": [],                   // absolute paths Claude must never read (search, chat, routines)
   "search_roots": ["~"],              // where the "/" palette searches
-  "dashboard": { "port": 8765, "accent": "#ff7a2f", "tone": "inform" }  // tone: inform = never prioritise for the user
+  "dashboard": { "port": 8765, "accent": "#ff7a2f", "tone": "inform" },  // tone: inform = never prioritise for the user
+  "projects": {                       // Projects page vocabulary (full defaults in os.config.example.json)
+    "statuses":   [ { "id": "ideas", "label": "Ideas", "icon": "lightbulb" }, { "id": "dev", "label": "In development", "icon": "code" } ],
+    "columns":    [ { "id": "inbox", "label": "To triage", "hint": "new tasks" }, { "id": "todo", "label": "To do" }, { "id": "done", "label": "Done" } ],
+    "importance": [ { "id": "low", "label": "Low", "color": "#8a8781" }, { "id": "urgent", "label": "Urgent", "color": "#ff2d6f" } ]
+  }
 }
 ```
 
@@ -126,8 +132,15 @@ loads hundreds of tools, `stdin=/dev/null`, env `AOS_JOURNAL=1` (prevents journa
 ## Screen (dashboard)
 
 `python3 dashboard/server.py` → http://127.0.0.1:<port>. Loopback only, CSP, CSRF guard (Origin +
-`X-Dashboard: 1`). It never writes to `dashboard/data/`; clicks write only to `state/` or enqueue a
-routine request in `routines/queue/`. `/open` reveals files, never executes them.
+`X-Dashboard: 1`). It never writes to `dashboard/data/`; clicks write only to `state/`, `projects/`, enqueue a
+routine request in `routines/queue/`, or — from the right-side panel — save an existing `.md`/`.txt` brain document
+or a routine's label/description/schedule/model/prompt (the previous version is copied to `state/md-backups/`).
+`/open` reveals files, never executes them.
+
+Endpoints for the Projects page and the side panel: `GET /projects`, `GET|POST /projects/<id>` (validated operations,
+see `dashboard/projects.py`), `POST /projects` (create), `GET /md?id=|path=`, `POST /md/save` (mtime conflict check),
+`GET /dir?path=` (brain folders only; never off-limits, hidden or secret-looking files), `GET|POST /routines/<name>`
+(skill sheet; `allowed_tools` and commands are never editable from the UI).
 
 ## Security defaults (see SECURITY.md)
 

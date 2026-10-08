@@ -23,5 +23,27 @@
   },
   "off_limits": [],
   "search_roots": ["~"],
-  "dashboard": { "port": 8765, "accent": "#ff7a2f", "tone": "inform" }
+  "dashboard": { "port": 8765, "accent": "#ff7a2f", "tone": "inform" },
+  "projects": {
+    "statuses": [
+      { "id": "ideas", "label": "Ideas", "icon": "lightbulb" },
+      { "id": "dev", "label": "In development", "icon": "code" },
+      { "id": "launch", "label": "Launch", "icon": "rocket-launch" },
+      { "id": "live", "label": "Live", "icon": "globe" },
+      { "id": "paused", "label": "Paused", "icon": "pause" }
+    ],
+    "columns": [
+      { "id": "inbox", "label": "To triage", "hint": "new tasks (sessions, ideas)" },
+      { "id": "todo", "label": "To do" },
+      { "id": "doing", "label": "In progress" },
+      { "id": "blocked", "label": "Blocked" },
+      { "id": "done", "label": "Done" }
+    ],
+    "importance": [
+      { "id": "low", "label": "Low", "color": "#8a8781" },
+      { "id": "medium", "label": "Medium", "color": "#f2b84b" },
+      { "id": "high", "label": "High", "color": "#ff5a4f" },
+      { "id": "urgent", "label": "Urgent", "color": "#ff2d6f" }
+    ]
+  }
 }

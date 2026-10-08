@@ -47,6 +47,19 @@ window.OS_CONFIG_READY = fetch("/config.json", { cache: "no-store" }).then(r => 
   Object.assign(window.AREA_COLOR, window.AREA_COLOR_DEFAULT);
   return cfg;
 });
+// Colour of an area or project (same setting as the brain's area colours): applied everywhere at once, saved in state/prefs.json.
+window.setProjectColor = (id, color, save = true) => {
+  if (!/^[a-z0-9-]{1,30}$/.test(id) || !/^#[0-9a-fA-F]{6}$/.test(color)) return;
+  window.AREA_COLOR[id] = color.toLowerCase();
+  window.dispatchEvent(new CustomEvent("projectcolor", { detail: { area: id, color: color.toLowerCase() } }));  // brain
+  window.dispatchEvent(new Event("areacolors"));                                                                // tags, cards
+  if (!save) return;
+  clearTimeout(window.setProjectColor.t);
+  window.setProjectColor.t = setTimeout(() => {
+    const custom = Object.fromEntries(Object.entries(window.AREA_COLOR).filter(([k, v]) => v !== (window.AREA_COLOR_DEFAULT || {})[k]));
+    fetch("/prefs", { method: "POST", headers: { "X-Dashboard": "1", "Content-Type": "application/json" }, body: JSON.stringify({ area_colors: custom }) }).catch(() => {});
+  }, 400);
+};
 // Colours picked by the user (state/prefs.json) override the config ones.
 window.AREA_PREFS = window.OS_CONFIG_READY
   .then(() => fetch("/state/prefs.json", { cache: "no-store" })).then(r => r.ok ? r.json() : {}).catch(() => ({}))
@@ -227,8 +240,6 @@ icons();
     $("st-map").className = "dot " + (m ? (m.ok ? "ok" : "bad") : "");
     $("st-map-v").textContent = m ? (m.ok ? "OK" : `${Math.max(1, (m.lines || []).length - 1)} ISSUE(S)`) : "–";
     $("st-map-box").title = m && !m.ok ? (m.lines || []).join("\n") : "Memory map: paths and sections checked";
-    const dg = data.digest;
-    $("st-data").textContent = dg && dg.updated_at ? `${ddmm(new Date(dg.updated_at))} ${hhmm(new Date(dg.updated_at))}` : "–";
     document.querySelectorAll('[data-src="digest"]').forEach(el => el.innerHTML = stamp("digest"));
   }
 
@@ -328,7 +339,7 @@ icons();
     if (!b) return;
     const id = b.dataset.done, next = !done[id];
     if (next) done[id] = { done_at: new Date().toISOString() }; else delete done[id];
-    renderDigest(); renderProjects();  // show immediately, then save
+    renderDigest();  // show immediately, then save
     try {
       const r = await POST("/done", { id, done: next });
       if (!r.ok) throw new Error(r.status);
@@ -358,54 +369,7 @@ icons();
   const PAGES = [...PAGE_LIST.map(p => p.id), "settings"];
   let current = "brain";
 
-  // ---------- Projects: milestone, progress, open tasks (from tracking files), mail count ----------
-  // area logos are served from /vendor/logos/<name>.png (config may give the file name or that URL)
-  const logoUrl = l => typeof l !== "string" ? null : /^\/vendor\/logos\/[\w.-]+\.png$/.test(l) ? l : /^[\w.-]+\.png$/.test(l) ? `/vendor/logos/${l}` : /^[\w-]+$/.test(l) ? `/vendor/logos/${l}.png` : null;
-  const AREA_BY_ID = Object.fromEntries(CFG.areas.filter(a => a && a.id).map(a => [a.id, a]));
-  function renderProjects() {
-    if (!PAGE.projects) return;
-    const t = data.today, d = data.digest || {};
-    $("proj-ts").innerHTML = stamp("today");
-    if (!t || !Array.isArray(t.projects) || !t.projects.length) { $("projects").innerHTML = `<p class="empty">No projects yet: they come from data/today.json (built from your areas).</p>`; return; }
-    const mails = {};
-    ["overnight", "waiting", "overdue", "live"].forEach(k => (k === "live" ? (data["inbox-live"] || {}).items || [] : d[k] || []).forEach((x, i) => {
-      if (typeof x !== "object" || !x || x.action === false) return;
-      const it = asItem({ action: true, ...x }, i, { overnight: "ov", waiting: "wt", overdue: "od", live: "lv" }[k]);
-      const a = areaOf(it);
-      if (a && !done[it.id]) mails[a] = (mails[a] || 0) + 1;
-    }));
-    const now0 = day0(new Date());
-    $("projects").innerHTML = t.projects.map(p => {
-      const msl = Array.isArray(p.milestones) ? p.milestones : [];
-      const m = msl.find(x => x.date) || msl[0];
-      const short = l => (String(l).split(/\s?:\s/)[1] || String(l)).replace(/\s*\(.*\)\s*/g, "");
-      const ms = m ? (m.date ? `${esc(short(m.label))} · ${ddmm(parseDay(m.date))} · D-${Math.max(0, Math.round((parseDay(m.date) - now0) / 864e5))}`
-                             : esc(short(m.label))) : "";
-      const logoSrc = logoUrl((AREA_BY_ID[p.area] || {}).logo || p.logo);
-      const logo = logoSrc ? `<img class="logo" src="${esc(logoSrc)}" alt="">` : `<span class="logo ic">${ph("buildings")}</span>`;
-      const head = `<div class="ph-row">${logo}<span class="pn">${esc(p.label)}</span>${mails[p.area] ? `<span class="mail-chip">${mails[p.area]} mail${mails[p.area] > 1 ? "s" : ""}</span>` : ""}` +
-        (ms ? `<span class="ms ${m && m.date ? "" : "later"}" title="${esc(m.label)}">${ms}</span>` : "") + `</div>`;
-      const li = x => `<li class="${x.paused ? "paused" : ""}">${esc(x.text)}${x.paused ? `<span class="tag">paused</span>` : ""}</li>`;
-      const list = (arr, n = 4) => arr.length ? `<ul class="ptasks">${arr.slice(0, n).map(li).join("")}` +
-        (arr.length > n ? `<li style="display:block"><details><summary>+ ${arr.length - n} more</summary><ul class="ptasks">${arr.slice(n).map(li).join("")}</ul></details></li>` : "") + `</ul>` : "";
-      // Session journal: where you left off, kept up to date automatically
-      const j = p.journal;
-      const ago = j && j.when ? (() => { const h = (Date.now() - new Date(String(j.when).replace(" ", "T"))) / 3.6e6; return h < 1 ? "less than 1 h ago" : h < 48 ? `${Math.round(h)} h ago` : `${Math.round(h / 24)} d ago`; })() : "";
-      const jopen = (j && j.open) || [];
-      const jour = j ? `<div class="jl"><div class="lbl">Last session · ${esc(ago)}</div><p class="js">${esc(j.summary)}</p>` +
-        (j.stopped_at ? `<p class="jstop">${ph("flag")}<span><b>Stopped at:</b> ${esc(j.stopped_at)}</span></p>` : "") + `</div>` +
-        (jopen.length ? `<div class="sub-lbl">Open tasks · ${jopen.length}</div>${list(jopen.map(t => ({ text: t })), 99)}` : "") +
-        ((j.done || []).length ? `<details class="steps"><summary><span class="sub-lbl">Recently done · ${j.done.length}</span></summary><ul class="ptasks">${j.done.map(t => `<li class="done">${esc(t)}</li>`).join("")}</ul></details>` : "") +
-        ((j.history || []).length > 1 ? `<details class="steps"><summary><span class="sub-lbl">Earlier sessions · ${j.history.length - 1}</span></summary><ul class="hist">${j.history.slice(1).map(h => `<li><span>${esc(String(h.when || "").slice(5, 10).split("-").reverse().join("."))}</span><span>${esc(h.summary)}</span></li>`).join("")}</ul></details>` : "") : "";
-      // Steps from the tracking file (PROGRESS.md…): folded so they don't mix with the rest
-      const prog = p.total ? `<details class="steps"><summary><span class="sub-lbl">Steps · ${p.done}/${p.total}</span><div class="qbar"><span style="width:${(p.done / p.total) * 100}%"></span></div></summary>${list(p.tasks || [], 99)}</details>` : "";
-      const sources = Array.isArray(p.sources) ? p.sources : [];
-      const links = sources.map(s => s.url ? link({ url: s.url, label: s.label })
-        : `<a class="go" href="/file?id=${encodeURIComponent(s.path)}" target="_blank" rel="noopener" title="${esc(homeTilde(s.path))}"><span class="gl">${esc(s.label)}</span>${ph("arrow-square-out")}</a>`).join("");
-      const none = !p.total && !j ? `<div class="pnone">${sources.some(s => s.url) ? "Tasks are tracked in an external tool." : "No task list yet: add a tracking file (e.g. PROGRESS.md) to the State section of this area."}</div>` : "";
-      return `<div class="proj" style="--c:${esc(window.AREA_COLOR[p.area] || "var(--muted)")}">${head}${jour}${prog}${none}${links ? `<div class="acts">${links}</div>` : ""}</div>`;
-    }).join("");
-  }
+  // Projects page: dashboard/projects.js (window.ProjectsUI), fed by /projects (projects/<id>.json).
 
   function renderDigest() {
     const d = data.digest || {}, t = data.today, today = day0(new Date());
@@ -479,8 +443,9 @@ icons();
     const r = data.routines;
     if ($("deck")) {
       const deck = r ? (r.routines || []).filter(x => !x.internal && x.deck !== false) : [];
-      $("deck").innerHTML = deck.length ? deck.map(x => `<button class="tile" data-run="${esc(x.name)}" ${x.enabled === false ? "disabled" : ""} title="Run /${esc(x.name)} now">` +
-        `<span class="ic">${ph("play")}</span><span style="min-width:0"><span class="tn">${esc(x.label || "/" + x.name)}</span><span class="tsub">${esc(humanCron(x.schedule))}</span></span></button>`).join("")
+      $("deck").innerHTML = deck.length ? deck.map(x => `<div class="tile-w"><button class="tile" data-run="${esc(x.name)}" ${x.enabled === false ? "disabled" : ""} title="Run /${esc(x.name)} now">` +
+        `<span class="ic">${ph("play")}</span><span style="min-width:0"><span class="tn">${esc(x.label || "/" + x.name)}</span><span class="tsub">${esc(humanCron(x.schedule))}</span></span></button>` +
+        `<button class="tile-ed" data-skill-edit="${esc(x.name)}" title="Open the skill sheet (view and edit)">${ph("pencil-simple")}</button></div>`).join("")
         : `<p class="empty">${r ? "No routine in the deck yet." : "The runner is not responding."}</p>`;
     }
     if (!$("routines")) return;
@@ -518,6 +483,39 @@ icons();
       `<div class="stats">${line("Today", r.today)}${line("Yesterday", r.yesterday)}</div>`;
   }
 
+  // ✎: the skill's sheet in the right-side panel (name, description, schedule, model, prompt)
+  const MODEL_LABEL = { "claude-haiku-4-5-20251001": "Haiku 4.5 (fast, cheapest)", "claude-sonnet-5-5": "Sonnet 5.5 (balanced)", "claude-opus-5-5": "Opus 5.5 (most capable, most expensive)" };
+  document.addEventListener("click", async e => {
+    const b = e.target.closest("[data-skill-edit]");
+    if (!b) return;
+    const name = b.dataset.skillEdit;
+    let k;
+    try { const r = await fetch(`/routines/${encodeURIComponent(name)}`, { cache: "no-store" }); k = await r.json(); if (!r.ok) throw new Error(k.error || r.status); }
+    catch (err) { $("deck-msg").textContent = `Sheet unavailable: ${err.message}`; return; }
+    const fields = [
+      { key: "label", label: "Name", value: k.label },
+      { key: "description", label: "What this skill does", value: k.description, rows: 3 },
+      { key: "schedule", label: "Schedule (cron)", value: k.schedule, placeholder: "empty = on demand only (▶)",
+        hint: `Now: ${humanCron(k.schedule || null)}. Format: minute hour day month weekday, e.g. "30 7 * * *" = every day at 07:30, "0 18 * * 5" = Fridays at 18:00.` },
+    ];
+    if (k.prompt_file) {
+      fields.push({ key: "model", label: "Model", value: k.model, options: k.models.map(m => ({ value: m, label: MODEL_LABEL[m] || m })) });
+      fields.push({ key: "prompt", label: `Prompt (routines/${k.prompt_file})`, value: k.prompt, rows: 22, raw: true,
+        hint: `Allowed tools (read-only here, change them only in routines/registry.json): ${k.allowed_tools.join(", ") || "none"}. The previous version is kept in state/md-backups/.` });
+    } else {
+      fields.push({ key: "_info", label: "Command (no AI, not editable here)", value: k.command, readonly: true,
+        hint: "This skill runs a script: to change what it does, edit the script or ask Claude (press / then Tab)." });
+    }
+    window.openFormPanel({ title: k.label || k.name, subtitle: `/${k.name} · skill sheet`, fields, onSubmit: async v => {
+      const body = { label: v.label, description: v.description, schedule: v.schedule };
+      if (k.prompt_file) { body.model = v.model; body.prompt = v.prompt; }
+      const r = await POST(`/routines/${encodeURIComponent(name)}`, body);
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || (r.status === 404 ? "restart the server" : r.status));
+      refresh(); return true;
+    } });
+  });
+
   // ▶: drops a request in the queue; the runner executes it on its next pass
   document.addEventListener("click", async e => {
     const b = e.target.closest("[data-run]");
@@ -539,16 +537,16 @@ icons();
       const h = await r.json(), up = ageMin(h.started_at);
       const upTxt = up < 60 ? `${Math.round(up)} MIN` : up < 2880 ? `${Math.round(up / 60)} H` : `${Math.round(up / 1440)} D`;
       dot.className = "dot " + (h.restart_needed ? "warn" : "ok");
-      v.textContent = h.restart_needed ? "" : `UP ${upTxt}`;
+      v.textContent = "";
       $("st-restart").hidden = !h.restart_needed;
       $("srv-start").hidden = true;
       $("srv-stop").hidden = false;
       health.started = h.started_at;
-      box.title = h.restart_needed ? "The server code changed since launch: restart it" : `Started ${new Date(h.started_at).toLocaleString()}`;
+      box.title = h.restart_needed ? "The server code changed since launch: restart it" : `Up for ${upTxt.toLowerCase()} · started ${new Date(h.started_at).toLocaleString()}`;
     } catch (e) {
       const old = String(e.message) === "404";
       dot.className = "dot " + (old ? "warn" : "bad");
-      v.textContent = old ? "RESTART (manually)" : "OFF";
+      v.textContent = old ? " · RESTART" : " · OFF";
       $("srv-start").hidden = old;
       $("srv-stop").hidden = true;
       $("st-restart").hidden = true;
@@ -625,7 +623,7 @@ icons();
       if (params.action === "archive" || params.action === "file") {  // filed or archived = handled
         await POST("/done", { id: b.dataset.item, done: true });
         done[b.dataset.item] = { done_at: new Date().toISOString() };
-        setTimeout(() => { renderDigest(); renderProjects(); }, 1200);
+        setTimeout(renderDigest, 1200);
       }
     } catch (err) { lbl.textContent = before; b.disabled = false; alert(`Action refused: ${err.message}`); }
   });
@@ -698,6 +696,8 @@ icons();
   // ---------- page switching ----------
   // The page shown is kept in the URL (#business), so it survives a reload and can be linked.
   function showPage(page) {
+    const sub = String(page || "").split("/").slice(1).join("/");  // #projects/<id>/<tab>
+    page = String(page || "").split("/")[0];
     page = PAGES.includes(page) ? page : "brain";
     current = page;
     document.querySelectorAll("[data-page]").forEach(x => x.setAttribute("aria-pressed", x.dataset.page === page));
@@ -709,9 +709,9 @@ icons();
     $("open-settings").setAttribute("aria-pressed", page === "settings");
     if (page === "settings") renderSettings();
     if (page === "business") renderBusiness();
-    if (page === "projects") renderProjects();
+    if (page === "projects" && window.ProjectsUI) window.ProjectsUI.show(sub);
     if (isCustom(page)) renderCustom(PAGE[page]);
-    const hash = page === "brain" ? "" : `#${page}`;
+    const hash = page === "brain" ? "" : `#${page}${page === "projects" && sub ? "/" + sub : ""}`;
     if (location.hash !== hash) history.replaceState(null, "", location.pathname + location.search + hash);
   }
   $("tabs").addEventListener("click", e => { const b = e.target.closest("[data-page]"); if (b) showPage(b.dataset.page); });
@@ -771,20 +771,20 @@ icons();
   // ---------- machine health: green / orange / red from the thresholds in macstats.py ----------
   async function machine() {
     const s = await getJSON("/sys");
-    if (!s) { $("mac").innerHTML = `<span class="mlab">SYS</span><span class="mi"><i></i><b>–</b></span>`; return; }
+    if (!s) { $("mac").innerHTML = `<span class="mi" title="Machine health unavailable"><i></i><b>–</b></span>`; return; }
     const LV = { ok: "normal", warn: "watch", bad: "critical", na: "unavailable" };
     const item = (k, v, lv, tip) => `<span class="mi ${esc(lv)}" title="${esc(tip)}"><i></i><span class="k">${k}</span><b>${esc(v)}</b></span>`;
     const t = s.temp || {}, m = s.ram || {}, c = s.cpu || {}, d = s.disk || {}, b = s.battery, th = s.throttling || {};
     const ORDER = ["na", "ok", "warn", "bad"];
     const worse = (...l) => l.filter(Boolean).reduce((a, x) => ORDER.indexOf(x) > ORDER.indexOf(a) ? x : a, "ok");
-    let h = `<span class="mlab">SYS</span>`;
+    let h = "";
     if (s.temp) h += item("TEMP", t.chip != null ? `${Math.round(t.chip)}°` : "–", worse(t.level, t.ssd_level, t.battery_level),
       `Chip: ${t.chip ?? "–"} °C (avg ${t.chip_avg ?? "–"} °C) · SSD: ${t.ssd ?? "–"} °C · battery: ${t.battery ?? "–"} °C\nThermal throttling: ${th.cpu_speed_limit != null && th.cpu_speed_limit < 100 ? "yes, speed " + th.cpu_speed_limit + "%" : "no"}\nState: ${LV[t.level] || "–"} (orange from 80 °C, red from 95 °C)`);
     if (s.ram) h += item("RAM", `${m.used_pct}%`, worse(m.level, m.swap_level),
       `Memory: ${m.used_pct}% of ${m.total_gb} GB · pressure: ${m.pressure === "normal" ? "normal" : m.pressure === "warn" ? "high" : m.pressure ? "critical" : "–"}\nSwap: ${m.swap_gb ?? "–"} GB${m.swap_gb >= 4 ? " (the disk is used as memory: things slow down)" : ""}`);
     if (s.cpu) h += item("CPU", `${c.load_pct}%`, c.level, `1-minute load average: ${c.load_pct}% of ${c.cores} cores`);
-    if (s.disk) h += item("SSD", `${d.free_pct}% free`, d.level, `Disk: ${d.free_gb} GB free of ${d.total_gb} GB${d.level !== "ok" ? "\nThe system slows down and may fail updates below ~10% free" : ""}`);
-    if (b) h += item(b.on_ac ? "⚡" : "BATT", `${b.pct}%`, b.level, `Battery: ${b.pct}% · ${b.state || ""}${b.remaining && b.remaining !== "0:00" && !String(b.remaining).includes("no") ? " · " + b.remaining + " left" : ""}`);
+    if (s.disk) h += item("SSD", `${d.free_pct ?? "–"}%`, d.level, `Disk: ${d.free_pct ?? "–"}% free (${d.free_gb ?? "–"} GB of ${d.total_gb ?? "–"} GB)${d.level !== "ok" ? "\nThe system slows down and may fail updates below ~10% free" : ""}`);
+    if (b && (!b.on_ac || b.level !== "ok")) h += item(b.on_ac ? "⚡" : "BATT", `${b.pct}%`, b.level, `Battery: ${b.pct}% · ${b.state || ""}${b.remaining && b.remaining !== "0:00" && !String(b.remaining).includes("no") ? " · " + b.remaining + " left" : ""}`);
     $("mac").innerHTML = h;
   }
   if ($("mac")) { machine(); setInterval(machine, 15000); }
@@ -802,7 +802,8 @@ icons();
       bar.style.width = `${left}%`;
       bar.className = left <= 10 ? "bad" : left <= 25 ? "warn" : "";
       const d = new Date(w.resets_at * 1000);
-      rst.textContent = reset ? "reset" : w.resets_at ? `↻ ${d.toDateString() === new Date().toDateString() ? hhmm(d) : WD[d.getDay()] + " " + hhmm(d)}` : "";
+      rst.textContent = "";
+      val.parentElement.title = reset ? "Quota reset" : w.resets_at ? `Resets ${d.toDateString() === new Date().toDateString() ? "at " + hhmm(d) : WD[d.getDay()] + " at " + hhmm(d)}` : "";
     };
     one(u && u.five_hour, "u5"); one(u && u.seven_day, "u7");
     const age = u ? ageMin(u.updated_at) : null;
@@ -1293,14 +1294,13 @@ icons();
     const dn = await getJSON("/state/done.json");
     if (dn && typeof dn === "object") done = dn;
     renderTop(); renderToday(); renderDigest(); renderRoutines();
-    if (current === "projects") renderProjects();
     if (isCustom(current)) renderCustom(PAGE[current]);
   }
   showPage(location.hash.slice(1));  // right away, without a flash of the Brain page
   // when an area colour changes (brain), tags and project cards follow
-  window.addEventListener("areacolors", () => { renderDigest(); renderProjects(); renderInbox(); if (current === "business") renderBusiness(); });
+  window.addEventListener("areacolors", () => { renderDigest(); renderInbox(); if (current === "business") renderBusiness(); });
   window.AREA_PREFS.then(() => window.dispatchEvent(new Event("areacolors")));
-  refresh().then(() => { if (current === "business") renderBusiness(); if (current === "projects") renderProjects(); });
+  refresh().then(() => { if (current === "business") renderBusiness(); });
   setInterval(refresh, APP.REFRESH_MS);
 })();
 
@@ -1323,4 +1323,238 @@ icons();
   }
   setFavicon();
   setInterval(setFavicon, 5000);
+})();
+
+// ---------- right-side panel: .md / .txt preview and edit, folder browsing, and forms (no popups anywhere) ----------
+(function () {
+  const $ = id => document.getElementById(id);
+  const panel = $("mdp");
+  if (!panel) return;
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const POSTJ = (url, body) => fetch(url, { method: "POST", headers: { "X-Dashboard": "1", "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  let doc = null, mode = "view", dirty = false, folder = null, form = null;
+
+  function inline(t) {  // t is already escaped
+    return t.replace(/`([^`]+)`/g, "<code>$1</code>")
+      .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/__([^_]+)__/g, "<b>$1</b>")
+      .replace(/(^|[^*])\*([^*\s][^*]*)\*/g, "$1<i>$2</i>")
+      .replace(/!\[([^\]]*)\]\([^)]*\)/g, "[image: $1]")
+      .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<span title="$2">$1</span>');
+  }
+
+  // Markdown → HTML (escaped first): headings, lists with clickable checkboxes, tables, code, quotes, rules
+  function render(src) {
+    const lines = src.split("\n"), out = [];
+    let i = 0, para = [];
+    const flush = () => { if (para.length) { out.push(`<p>${inline(esc(para.join(" ")))}</p>`); para = []; } };
+    while (i < lines.length) {
+      const l = lines[i];
+      if (/^\s*```/.test(l)) {
+        flush(); const buf = []; i++;
+        while (i < lines.length && !/^\s*```/.test(lines[i])) buf.push(lines[i++]);
+        out.push(`<pre><code>${esc(buf.join("\n"))}</code></pre>`); i++; continue;
+      }
+      let m;
+      if ((m = /^(#{1,6})\s+(.*)$/.exec(l))) { flush(); const n = Math.min(m[1].length, 4); out.push(`<h${n}>${inline(esc(m[2]))}</h${n}>`); i++; continue; }
+      if (/^\s*([-*_])\s*\1\s*\1[\s\1]*$/.test(l)) { flush(); out.push("<hr>"); i++; continue; }
+      if (/^\s*>/.test(l)) {
+        flush(); const buf = [];
+        while (i < lines.length && /^\s*>/.test(lines[i])) buf.push(lines[i++].replace(/^\s*>\s?/, ""));
+        out.push(`<blockquote>${inline(esc(buf.join(" ")))}</blockquote>`); continue;
+      }
+      if (/^\s*\|.*\|\s*$/.test(l) && i + 1 < lines.length && /^\s*\|?\s*:?-{2,}/.test(lines[i + 1])) {
+        flush();
+        const cells = r => r.trim().replace(/^\||\|$/g, "").split("|").map(c => inline(esc(c.trim())));
+        let h = `<table><thead><tr>${cells(l).map(c => `<th>${c}</th>`).join("")}</tr></thead><tbody>`;
+        i += 2;
+        while (i < lines.length && /^\s*\|/.test(lines[i])) h += `<tr>${cells(lines[i++]).map(c => `<td>${c}</td>`).join("")}</tr>`;
+        out.push(h + "</tbody></table>"); continue;
+      }
+      if (/^\s*([-*+]|\d+[.)])\s+/.test(l)) {
+        flush();
+        const ordered = /^\s*\d/.test(l); let h = ordered ? "<ol>" : "<ul>";
+        while (i < lines.length && /^\s*([-*+]|\d+[.)])\s+/.test(lines[i])) {
+          const t = lines[i].replace(/^\s*([-*+]|\d+[.)])\s+/, "");
+          const task = /^\[([ xX])\]\s*(.*)$/.exec(t);
+          h += task ? `<li class="task ${task[1] !== " " ? "done" : ""}"><input type="checkbox" data-line="${i}" ${task[1] !== " " ? "checked" : ""}><span>${inline(esc(task[2]))}</span></li>`
+                    : `<li>${inline(esc(t))}</li>`;
+          i++;
+        }
+        out.push(h + (ordered ? "</ol>" : "</ul>")); continue;
+      }
+      if (!l.trim()) { flush(); i++; continue; }
+      para.push(l.trim()); i++;
+    }
+    flush();
+    return out.join("") || '<p class="empty">Empty document.</p>';
+  }
+
+  const status = (t, cls = "") => { $("mdp-status").className = cls; $("mdp-status").textContent = t; };
+  function setDirty(v) {
+    dirty = v; $("mdp-save").disabled = form ? false : (!v || !(doc && doc.writable));
+    $("mdp-name").classList.toggle("dirty", v);
+    $("mdp-name").textContent = (form ? form.title : doc ? doc.name : $("mdp-name").textContent.replace(/ •$/, "")) + (v ? " •" : "");
+  }
+  const resetForm = () => { form = null; $("mdp-save").textContent = "Save"; $("mdp-view").classList.remove("mdf-on"); $("mdp-path").style.direction = ""; };
+  const openPanel = () => { panel.hidden = false; requestAnimationFrame(() => panel.classList.add("open")); };
+
+  // Form in the right-side panel: replaces every prompt() of the dashboard.
+  // fields: [{ key, label, value, rows (1 = one line), placeholder, hint, options: [{value, label}], readonly, raw (keep spaces) }]
+  // onSubmit(values) → true when saved (the panel closes); throw an Error to show its message.
+  window.openFormPanel = ({ title, subtitle = "", fields, submit = "Save", onSubmit }) => {
+    if (dirty && !confirm("Unsaved changes. Discard them?")) return;
+    doc = null; folder = null; form = { title, onSubmit, fields };
+    openPanel();
+    $("mdp-seg").hidden = true; $("mdp-back").hidden = true; $("mdp-edit").hidden = true; $("mdp-view").hidden = false; $("mdp-save").hidden = false;
+    $("mdp-save").textContent = submit; $("mdp-name").textContent = title; $("mdp-path").textContent = subtitle; $("mdp-path").title = subtitle; $("mdp-path").style.direction = "ltr";
+    $("mdp-view").classList.add("mdf-on");
+    $("mdp-view").innerHTML = `<form class="mdf" autocomplete="off">${fields.map(f => `<label for="mdf-${esc(f.key)}">${esc(f.label)}</label>` +
+      (f.options ? `<select id="mdf-${esc(f.key)}">${f.options.map(o => `<option value="${esc(o.value)}" ${o.value === f.value ? "selected" : ""}>${esc(o.label)}</option>`).join("")}</select>` :
+       (f.rows || 1) > 1 ? `<textarea id="mdf-${esc(f.key)}" rows="${+f.rows}" placeholder="${esc(f.placeholder || "")}" ${f.readonly ? "readonly" : ""}>${esc(f.value || "")}</textarea>`
+                         : `<input id="mdf-${esc(f.key)}" value="${esc(f.value || "")}" placeholder="${esc(f.placeholder || "")}" ${f.readonly ? "readonly" : ""}>`) +
+      (f.hint ? `<small>${esc(f.hint)}</small>` : "")).join("")}</form>`;
+    setDirty(false); status("⌘S or Enter (one-line field) to save · Esc to close");
+    const first = $("mdp-view").querySelector("input:not([readonly]), textarea:not([readonly])");
+    if (first) { first.focus(); try { first.setSelectionRange(first.value.length, first.value.length); } catch {} }
+    $("mdp-view").querySelectorAll("input, textarea, select").forEach(el => el.addEventListener("input", () => setDirty(true)));
+    $("mdp-view").querySelectorAll("input").forEach(el => el.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); save(); } }));
+    $("mdp-view").querySelector("form").addEventListener("submit", e => { e.preventDefault(); save(); });
+  };
+  function setMode(m) {
+    mode = m;
+    panel.querySelectorAll("[data-mdmode]").forEach(b => b.setAttribute("aria-pressed", b.dataset.mdmode === m));
+    $("mdp-view").hidden = m !== "view"; $("mdp-edit").hidden = m !== "edit";
+    if (m === "view") $("mdp-view").innerHTML = render($("mdp-edit").value);
+    else $("mdp-edit").focus();
+  }
+
+  const fmtSize = n => n < 1024 ? n + " B" : n < 1048576 ? Math.round(n / 1024) + " KB" : (n / 1048576).toFixed(1) + " MB";
+  const ICON_BY_EXT = { ".md": "file-text", ".txt": "file-text", ".pdf": "file-pdf", ".png": "image", ".jpg": "image", ".jpeg": "image", ".heic": "image",
+    ".docx": "file-doc", ".doc": "file-doc", ".xlsx": "file-xls", ".csv": "file-csv", ".zip": "file-zip" };
+  const icon = n => (window.ph ? window.ph(n) : "") || "";
+
+  // folder: browsable list (sub-folders, .md/.txt previewed here, other files opened with their app)
+  window.openPathPreview = async (path, label) => {
+    if (dirty && !confirm("Unsaved changes in the open document. Discard them?")) return;
+    resetForm(); openPanel();
+    doc = null; setDirty(false); status("");
+    $("mdp-seg").hidden = true; $("mdp-save").hidden = true; $("mdp-edit").hidden = true; $("mdp-view").hidden = false;
+    $("mdp-name").textContent = label || path.split("/").pop(); $("mdp-path").textContent = "‎" + path + "‎"; $("mdp-path").title = path;
+    $("mdp-view").innerHTML = '<p class="empty" style="padding:16px 22px">Reading…</p>';
+    try {
+      const r = await fetch(`/dir?path=${encodeURIComponent(path)}`, { cache: "no-store" });
+      const d = await r.json().catch(() => ({}));
+      if (r.status === 409 && d.notdir) return window.openMdPreview(null, label, path);
+      if (!r.ok) throw new Error(d.error || (r.status === 404 ? "folder not found or not allowed (restart the server if it is new)" : r.status));
+      folder = d;
+      $("mdp-name").textContent = d.name;
+      $("mdp-back").hidden = d.path === d.root;
+      $("mdp-view").innerHTML = d.entries.length ? `<ul class="dirl">${d.entries.map(e => {
+        const md = /\.(md|txt)$/i.test(e.name);
+        return `<li class="${e.dir ? "dir" : md ? "md" : ""}" data-entry="${esc(e.path)}" data-kind="${e.dir ? "dir" : md ? "md" : "file"}">` +
+          `<span class="ki">${icon(e.dir ? "folder" : ICON_BY_EXT[e.ext] || "file")}</span><span class="nm">${esc(e.name)}</span>` +
+          `<span class="mt">${e.dir ? "" : fmtSize(e.size) + " · "}${new Date(e.mtime * 1000).toLocaleDateString()}</span></li>`; }).join("")}</ul>`
+        : '<p class="empty" style="padding:16px 22px">Empty folder.</p>';
+      status(`${d.entries.length} item(s) · .md / .txt: preview and edit · other files: opened with their app`);
+    } catch (e) { $("mdp-view").innerHTML = `<p class="empty" style="padding:16px 22px">Cannot open: ${esc(e.message)}</p>`; }
+  };
+  $("mdp-view").addEventListener("click", async e => {
+    const li = e.target.closest("[data-entry]"); if (!li) return;
+    const p = li.dataset.entry;
+    if (li.dataset.kind === "dir") return window.openPathPreview(p);
+    if (li.dataset.kind === "md") return window.openMdPreview(null, p.split("/").pop(), p, true);
+    try {
+      const r = await POSTJ("/open", { path: p });
+      if (!r.ok) throw new Error(r.status);
+      status(`Opened: ${p.split("/").pop()}`, "ok");
+    } catch { status("This file cannot be opened from here", "err"); }
+  });
+  $("mdp-back").onclick = () => {
+    if (!folder) return;
+    if (dirty && !confirm("Unsaved changes. Discard them?")) return;
+    setDirty(false);
+    // from a document: back to its folder; from a sub-folder: its parent
+    window.openPathPreview(doc ? folder.path : folder.path.split("/").slice(0, -1).join("/"));
+  };
+
+  window.openMdPreview = async (id, label, path, inFolder) => {
+    if (dirty && !confirm("Unsaved changes in the open document. Discard them?")) return;
+    resetForm();
+    if (!inFolder) folder = null;
+    $("mdp-seg").hidden = false; $("mdp-save").hidden = false; $("mdp-back").hidden = !inFolder;
+    openPanel();
+    doc = null; $("mdp-name").textContent = label || ""; $("mdp-path").textContent = ""; $("mdp-view").innerHTML = '<p class="empty" style="padding:16px 22px">Reading…</p>';
+    $("mdp-edit").value = ""; setDirty(false); status("");
+    try {
+      const r = await fetch(path ? `/md?path=${encodeURIComponent(path)}` : `/md?id=${encodeURIComponent(id)}`, { cache: "no-store" });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || (r.status === 404 ? "document not found or not allowed" : r.status));
+      doc = { ...d, id, byPath: !id, inFolder: !!inFolder };
+      $("mdp-path").textContent = "‎" + d.path + "‎"; $("mdp-path").title = d.path;
+      $("mdp-edit").value = d.content; setDirty(false);
+      status(d.writable ? "" : "read only (the file is write-protected)");
+      setMode("view");
+    } catch (e) { $("mdp-view").hidden = false; $("mdp-edit").hidden = true; $("mdp-view").innerHTML = `<p class="empty" style="padding:16px 22px">Cannot open: ${esc(e.message)}</p>`; }
+  };
+
+  async function save() {
+    if (form) {
+      const values = Object.fromEntries(form.fields.filter(f => !f.readonly).map(f => {
+        const v = $("mdf-" + f.key)?.value ?? "";
+        return [f.key, f.raw ? v : v.trim()];
+      }));
+      $("mdp-save").disabled = true; status("Saving…");
+      let ok = false;
+      try { ok = await form.onSubmit(values); } catch (e) { status(`Not saved: ${e.message}`, "err"); }
+      $("mdp-save").disabled = false;
+      if (ok) { setDirty(false); close(); } else if (ok === false && !$("mdp-status").classList.contains("err")) status("Not saved", "err");
+      return;
+    }
+    if (!doc || !dirty) return;
+    $("mdp-save").disabled = true; status("Saving…");
+    try {
+      const r = await POSTJ("/md/save", { ...(doc.byPath ? { path: doc.path } : { id: doc.id }), content: $("mdp-edit").value, mtime: doc.mtime });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || r.status);
+      doc.mtime = d.mtime; setDirty(false);
+      status(`Saved at ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · previous version kept in ${d.backup}`, "ok");
+    } catch (e) { status(`Not saved: ${e.message}`, "err"); $("mdp-save").disabled = false; }
+  }
+  function close() {
+    if (dirty && !confirm("Close without saving the changes?")) return;
+    panel.classList.remove("open"); setTimeout(() => { panel.hidden = true; }, 180); doc = null; folder = null; setDirty(false); resetForm();
+  }
+  window.closeSidePanel = close;
+
+  panel.querySelectorAll("[data-mdmode]").forEach(b => b.onclick = () => setMode(b.dataset.mdmode));
+  $("mdp-save").onclick = save;
+  $("mdp-close").onclick = close;
+  $("mdp-edit").addEventListener("input", () => setDirty(true));
+  $("mdp-edit").addEventListener("keydown", e => {  // Tab inserts two spaces instead of leaving the field
+    if (e.key === "Tab") { e.preventDefault(); document.execCommand("insertText", false, "  "); }
+  });
+  $("mdp-view").addEventListener("change", e => {  // ticking a box in the preview edits the document
+    const cb = e.target.closest("input[data-line]"); if (!cb) return;
+    const lines = $("mdp-edit").value.split("\n"), n = +cb.dataset.line;
+    lines[n] = lines[n].replace(/\[([ xX])\]/, cb.checked ? "[x]" : "[ ]");
+    $("mdp-edit").value = lines.join("\n"); setDirty(true); $("mdp-view").innerHTML = render($("mdp-edit").value);
+  });
+  document.addEventListener("keydown", e => {
+    if (panel.hidden) return;
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") { e.preventDefault(); save(); }
+    else if (e.key === "Escape" && document.getElementById("sx").hidden) { e.preventDefault(); e.stopImmediatePropagation(); close(); }
+  }, true);
+  window.addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
+  panel.querySelectorAll("[data-ic]").forEach(el => { if (!el.querySelector("svg") && window.ph) el.insertAdjacentHTML("afterbegin", window.ph(el.dataset.ic)); });
+})();
+
+// A block whose header counter shows exactly 0 (Inbox, Waiting on you, Capture…) turns light green: all clear.
+(function () {
+  const sync = () => document.querySelectorAll(".blk").forEach(b => {
+    const c = b.querySelector(":scope > .bh .cnt");
+    b.classList.toggle("all-clear", !!c && c.textContent.trim() === "0");
+  });
+  new MutationObserver(sync).observe(document.body, { subtree: true, childList: true, characterData: true });
+  sync();
 })();

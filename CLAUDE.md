@@ -47,6 +47,7 @@ Read `os.config.json`.
 |---|---|
 | `os.config.json` | the user's choices: panels, pages, areas, clocks, plan, mail plan (git-ignored) |
 | `goals.json` | milestones shown in Today and Projects (git-ignored) |
+| `projects/<id>.json` | one file per project for the Projects page: tasks, ideas, status, links (git-ignored, format below) |
 | `memory-map/MAP.md`, `memory-map/areas/<id>.md` | the memory map (6 fixed sections per area) |
 | `interviews/` | setup interviews, one file per topic (git-ignored) |
 | `routines/registry.json`, `routines/prompts/` | routines; personal prompts go in `routines/prompts/custom/` |
@@ -54,6 +55,30 @@ Read `os.config.json`.
 | `dashboard/` | local dashboard (stdlib server + static page) |
 | `state/` | journals, captures, done marks, usage, chat (git-ignored) |
 | `dashboard/data/` | JSON written by routines and builders, read by the dashboard (git-ignored) |
+
+### Project files (`projects/<id>.json`)
+
+Read before editing, keep every other field as is, write valid JSON (indent 1). The id is the file name (lower case,
+`a-z0-9-`, the area id when the project is an area). Allowed values for `status`, `col` and `importance` are the ids in
+`os.config.json` → `projects` (`statuses`, `columns`, `importance`; defaults in `os.config.example.json`). The first
+status is the ideas stage; the column `done` means completed.
+
+```json
+{
+  "id": "garden", "label": "Garden", "status": "dev", "order": 0,
+  "objective": "one or two sentences", "for_whom": "", "problem": "", "notes": "",
+  "next_time": "what the user said they want to do next time", "next_time_at": "2026-10-07 18:30",
+  "links": [ { "label": "Docs", "url": "https://example.com/docs" }, { "label": "Plan", "url": "/abs/path/plan.md" } ],
+  "tasks": [ { "id": "t1a2b3c4d", "title": "Order the seeds", "col": "todo", "importance": "medium",
+               "due": "2026-10-20", "tags": ["shopping"], "notes": "", "source": "claude", "created": "2026-10-07T18:30:00+02:00" } ],
+  "ideas": [ { "id": "i1a2b3c4d", "text": "A rain sensor", "source": "claude", "created": "2026-10-07T18:30:00+02:00", "task": "" } ],
+  "imported": { "tasks": [], "ideas": [] }
+}
+```
+
+To add a task: append to `tasks` with a new unique `id` (`t` + 8 hex characters), `col` usually the first column
+(`inbox`) unless the user says otherwise, `due` as `YYYY-MM-DD` or `""`. Tasks keep the order the user gave them:
+never re-sort. Milestones stay in `goals.json` (field `area` = project id); do not copy them into project files.
 
 ## 5. Commands
 
